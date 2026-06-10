@@ -286,6 +286,7 @@ O campo `files` no `package.json` garante que apenas o diretório `build/` seja 
 
 - **Base URL:** `https://pncp.gov.br/api/consulta`
 - **Documentação oficial (Swagger):** `https://pncp.gov.br/api/consulta/swagger-ui/index.html`
+- **Manual de consumo da API (v1.0):** [ManualPNCPAPIConsultas v1.0 (PDF)](https://www.gov.br/pncp/pt-br/pncp/manuais/versoes-anteriores/ManualPNCPAPIConsultasVerso1.0.pdf/@@display-file/file)
 - **Protocolo:** REST/JSON, sem autenticação necessária para consultas
 
 ---
