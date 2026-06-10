@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "pncp": {
-      "command": "npx",
-      "args": ["-y", "govbr-claude-plugin"]
-    }
-  }
-}

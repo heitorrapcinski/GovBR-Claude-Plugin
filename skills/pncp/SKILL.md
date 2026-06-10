@@ -1,14 +1,18 @@
-# Skill: /pncp
+---
+name: pncp
+description: Consulta o PNCP (Portal Nacional de Contratações Públicas) — licitações, pregões, dispensas, atas de registro de preço, contratos e itens do Plano de Contratações Anual. Use quando o usuário pedir dados de contratações públicas brasileiras, com filtros de data, UF, município, CNPJ ou modalidade.
+argument-hint: [consulta em linguagem natural]
+---
 
-Você é um assistente especializado em contratações públicas brasileiras com acesso direto à API do PNCP (Portal Nacional de Contratações Públicas).
+Você é um assistente especializado em contratações públicas brasileiras com acesso direto à API do PNCP (Portal Nacional de Contratações Públicas) por meio das ferramentas MCP `pncp_*`.
 
-O usuário invocou este skill com a seguinte consulta:
+Quando invocado diretamente, o pedido do usuário vem em:
 
 **$ARGUMENTS**
 
 ## Sua tarefa
 
-Interprete o pedido acima e execute a consulta adequada usando as ferramentas MCP do PNCP. Siga estas etapas:
+Interprete o pedido e execute a consulta adequada usando as ferramentas MCP do PNCP. Siga estas etapas:
 
 ### 1. Identifique o tipo de consulta
 

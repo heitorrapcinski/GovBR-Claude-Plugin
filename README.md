@@ -2,14 +2,14 @@
 
 Plugin que integra o **Claude** ao **Portal Nacional de Contratações Públicas (PNCP)**, permitindo consultar licitações, contratos, atas e planos de contratações diretamente na conversa — sem sair do Claude.
 
-O plugin é composto por duas partes que funcionam em conjunto:
+O plugin é composto por duas partes que funcionam em conjunto e são distribuídas **juntas, em um único plugin do Claude Code**:
 
-| Parte | O que é | Onde funciona |
-|---|---|---|
-| **Servidor MCP** | Conecta o Claude à API do PNCP e expõe 7 ferramentas de consulta | Claude Desktop (chat) |
-| **Skill `/pncp`** | Interface em linguagem natural que usa as ferramentas do MCP | Claude Code (CLI e IDEs) |
+| Parte | O que é |
+|---|---|
+| **Servidor MCP** | Conecta o Claude à API do PNCP e expõe 7 ferramentas de consulta |
+| **Skill `/pncp`** | Interface em linguagem natural que usa as ferramentas do MCP |
 
-O **MCP** é a camada de acesso aos dados — ele sabe como chamar a API do PNCP. O **skill** é a camada de interpretação — ele entende o que você quer dizer em português e decide qual ferramenta usar e com quais parâmetros.
+O **MCP** é a camada de acesso aos dados — ele sabe como chamar a API do PNCP. O **skill** é a camada de interpretação — ele entende o que você quer dizer em português e decide qual ferramenta usar e com quais parâmetros. Ao instalar o plugin, os dois são registrados automaticamente.
 
 ---
 
@@ -42,107 +42,69 @@ Contratos publicados em janeiro de 2024 pelo CNPJ 00059311000126.
 
 ## Requisitos
 
-- [Node.js](https://nodejs.org/) 18 ou superior
-- [Claude Desktop](https://claude.ai/download) — para o servidor MCP
-- [Claude Code](https://claude.ai/code) — para o skill `/pncp`
-
----
-
-## Desenvolvimento e publicação
-
-### Clonando o Repositório
-
-```bash
-git clone https://github.com/heitorrapcinski/GovBR-Claude-Plugin.git
-cd GovBR-Claude-Plugin
-```
-
-### Rodando localmente
-
-```bash
-# Instalar dependências e compilar
-npm install
-
-# Modo desenvolvimento (sem compilar)
-npm run dev
-
-# Recompilar após alterações
-npm run build
-```
-
-Para apontar o Claude Desktop ao build local em vez do npx, edite o `claude_desktop_config.json`:
-
-**macOS / Linux:**
-```json
-{
-  "mcpServers": {
-    "pncp": {
-      "command": "node",
-      "args": ["/caminho/para/GovBR-Claude-Plugin/build/index.js"]
-    }
-  }
-}
-```
-
-**Windows:**
-```json
-{
-  "mcpServers": {
-    "pncp": {
-      "command": "node",
-      "args": ["C:\\caminho\\para\\GovBR-Claude-Plugin\\build\\index.js"]
-    }
-  }
-}
-```
-
-### Publicando no npm
-
-Quando o plugin estiver testado e validado:
-
-```bash
-npm publish
-```
-
-O campo `files` no `package.json` garante que apenas o diretório `build/` seja enviado ao npm — código-fonte, arquivos de configuração e dependências de desenvolvimento ficam de fora.
+- [Node.js](https://nodejs.org/) 18 ou superior — para **compilar** o plugin (gerar o bundle). O plugin já compilado roda sem `node_modules`.
+- App do Claude com suporte a plugins (Claude Code, ou Claude Desktop com a área de plugins em **Customize**).
 
 ---
 
 ## Instalação
 
-### Servidor MCP no Claude Desktop
+O servidor MCP e o comando `/pncp` são distribuídos **juntos, como um único plugin do Claude Code**. Não é necessário editar o `claude_desktop_config.json` manualmente.
 
-O MCP é instalado via `npx` — não é necessário clonar o repositório nem instalar nada manualmente.
+### 1. Gere o pacote do plugin
 
-Abra o arquivo de configuração do Claude Desktop:
-
-| Sistema | Caminho |
-|---|---|
-| **macOS** | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| **Windows** | `%APPDATA%\Claude\claude_desktop_config.json` |
-
-Se o arquivo não existir, crie-o. Adicione o bloco abaixo:
-
-```json
-{
-  "mcpServers": {
-    "pncp": {
-      "command": "npx",
-      "args": ["-y", "govbr-claude-plugin"]
-    }
-  }
-}
+```bash
+git clone https://github.com/heitorrapcinski/GovBR-Claude-Plugin.git
+cd GovBR-Claude-Plugin
+npm install        # instala deps e compila o bundle (script "prepare")
+npm run package    # gera build/govbr-claude-plugin.plugin
 ```
 
-Se você já tiver outros servidores MCP configurados, adicione apenas o bloco `"pncp": { ... }` dentro de `"mcpServers"`.
+O `npm run package` compila o servidor num bundle autossuficiente (`build/index.cjs`, com todas as dependências embutidas) e empacota o plugin em **`build/govbr-claude-plugin.plugin`** — um arquivo pronto para upload, sem `node_modules`.
 
-Reinicie o Claude Desktop. Um ícone de martelo (🔨) aparecerá no campo de digitação indicando que as ferramentas estão ativas.
+### 2. Instale o plugin
 
-### Skill `/pncp` no Claude Code
+No app do Claude, abra a área de plugins (**Customize → plugins**) e escolha **"Fazer upload de plugin local"**. Selecione o arquivo **`build/govbr-claude-plugin.plugin`**.
 
-O skill está incluído no repositório em `.claude/commands/pncp.md`. Para ativá-lo inclua ele no seu repositório e abra o Claude Code.
+O Claude lê o manifesto `.claude-plugin/plugin.json` e registra automaticamente:
 
-O skill `/pncp` ficará disponível automaticamente no Claude Code. Ele depende do servidor MCP estar configurado no Claude Desktop para funcionar.
+- o **servidor MCP** (via `.mcp.json` → as 7 ferramentas `pncp_*`);
+- o **skill `/pncp`** (via `skills/pncp/SKILL.md`), que o Claude também invoca automaticamente quando você pede dados de contratações.
+
+> **Alternativa — "Adicionar marketplace":** instala a partir de um repositório GitHub. **Não** é usada aqui porque o bundle (`build/`) fica fora do controle de versão (`.gitignore`); para esse modo o bundle precisaria ser publicado. O **upload local** é o caminho suportado por este projeto.
+
+### 3. Confirme
+
+Um ícone de ferramentas aparece no campo de digitação listando as 7 ferramentas `pncp_*`, e o comando `/pncp` fica disponível.
+
+---
+
+## Desenvolvimento
+
+```bash
+npm install        # instala deps e gera o bundle (build/index.cjs)
+npm run dev        # roda o servidor direto do TypeScript (tsx), sem bundle
+npm run build      # regenera o bundle com esbuild
+npm run package    # gera o pacote build/govbr-claude-plugin.plugin
+npm run typecheck  # checagem de tipos (tsc --noEmit)
+```
+
+Estrutura do plugin:
+
+```
+GovBR-Claude-Plugin/
+├── .claude-plugin/plugin.json   # manifesto do plugin
+├── .mcp.json                    # registra o servidor MCP (build/index.cjs)
+├── skills/pncp/SKILL.md         # skill /pncp (formato recomendado)
+├── src/                         # código-fonte TypeScript do servidor MCP
+├── build.mjs                    # script esbuild (gera o bundle)
+├── package.mjs                  # script de empacotamento (.plugin)
+└── build/                       # gerado, gitignored
+    ├── index.cjs                #   bundle autossuficiente
+    └── govbr-claude-plugin.plugin  # pacote para upload
+```
+
+Após alterar o código em `src/`, rode `npm run build` e recarregue o plugin (`/reload-plugins` ou reinicie o Claude).
 
 ---
 

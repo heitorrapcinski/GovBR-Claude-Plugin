@@ -9,8 +9,21 @@ import axios, { AxiosError } from "axios";
 import { createRequire } from "module";
 import { DOMAIN_TABLES, getDomainTable, TABELAS_DISPONIVEIS } from "./constants.js";
 
-const require = createRequire(import.meta.url);
-const { version } = require("../package.json") as { version: string };
+// __PKG_VERSION__ é injetado pelo esbuild em tempo de build (ver build.mjs).
+// Em dev (tsx, sem o define) ele não existe, então lemos o package.json em runtime.
+declare const __PKG_VERSION__: string | undefined;
+
+function resolveVersion(): string {
+  if (typeof __PKG_VERSION__ === "string") return __PKG_VERSION__;
+  try {
+    const require = createRequire(import.meta.url);
+    return (require("../package.json") as { version: string }).version;
+  } catch {
+    return "0.0.0";
+  }
+}
+
+const version = resolveVersion();
 
 const BASE_URL = "https://pncp.gov.br/api/consulta";
 
