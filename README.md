@@ -24,14 +24,16 @@ O **MCP** é a camada de acesso aos dados — ele sabe como chamar a API do PNCP
 
 ## Exemplos de uso
 
-**No Claude Desktop** — converse normalmente:
+As duas formas funcionam tanto no **Claude Desktop** quanto no **Claude Code**:
+
+**Linguagem natural** — converse normalmente:
 ```
 Quais pregões eletrônicos foram publicados em SP esta semana?
 Dispensas de licitação com propostas abertas até hoje no RJ.
 Contratos publicados em janeiro de 2024 pelo CNPJ 00059311000126.
 ```
 
-**No Claude Code** — use o skill `/pncp`:
+**Skill `/pncp`** — prefixe com `/pncp`:
 ```
 /pncp pregões eletrônicos abertos em SP esta semana
 /pncp atas de registro de preço vigentes em 2024 no RJ
@@ -74,7 +76,7 @@ O Claude lê o manifesto `.claude-plugin/plugin.json` e registra automaticamente
 
 ### Confirme
 
-Um ícone de ferramentas aparece no campo de digitação listando as 7 ferramentas `pncp_*`, e o comando `/pncp` fica disponível.
+O comando `/pncp` fica disponível na barra de comandos e o Claude passa a reconhecer pedidos de dados do PNCP automaticamente na conversa.
 
 ---
 
@@ -109,9 +111,11 @@ Após alterar o código em `src/`, rode `npm run build` e recarregue o plugin (`
 
 ## Como usar
 
-### Claude Desktop
+As duas formas funcionam tanto no **Claude Desktop** quanto no **Claude Code**.
 
-Após instalar o MCP, converse com o Claude normalmente. Ele detecta automaticamente quando você quer dados do PNCP e chama a ferramenta adequada:
+### Linguagem natural
+
+Converse com o Claude normalmente. Ele detecta automaticamente quando você quer dados do PNCP e chama a ferramenta adequada:
 
 ```
 Busque os pregões eletrônicos publicados em São Paulo entre 01/06/2024 e 30/06/2024.
@@ -121,7 +125,7 @@ Quais atas de registro de preço estão vigentes entre janeiro e dezembro de 202
 Me mostre os códigos de modalidade de contratação disponíveis no PNCP.
 ```
 
-### Claude Code — skill `/pncp`
+### Skill `/pncp`
 
 Digite `/pncp` seguido da sua consulta em linguagem natural:
 
