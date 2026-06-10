@@ -48,7 +48,7 @@ async function pncpGet(endpoint: string, params: Record<string, unknown>): Promi
 }
 
 const server = new Server(
-  { name: "pncp-plugin", version: "0.1.0" },
+  { name: "pncp-plugin", version },
   { capabilities: { tools: {} } }
 );
 
