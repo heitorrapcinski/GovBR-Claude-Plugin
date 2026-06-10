@@ -44,7 +44,7 @@ Contratos publicados em janeiro de 2024 pelo CNPJ 00059311000126.
 
 ## Requisitos
 
-- [Node.js](https://nodejs.org/) 18 ou superior — para **compilar** o plugin (gerar o bundle). O plugin já compilado roda sem `node_modules`.
+- [Node.js](https://nodejs.org/) 22 ou superior — para **compilar** o plugin (gerar o bundle). O plugin já compilado roda sem `node_modules`.
 - App do Claude com suporte a plugins (Claude Code, ou Claude Desktop com a área de plugins em **Customize**).
 
 ---
