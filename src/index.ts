@@ -5,7 +5,11 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import axios, { AxiosError } from "axios";
+import { createRequire } from "module";
 import { DOMAIN_TABLES, getDomainTable, TABELAS_DISPONIVEIS } from "./constants.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as { version: string };
 
 const BASE_URL = "https://pncp.gov.br/api/consulta";
 
@@ -13,7 +17,7 @@ const httpClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     accept: "*/*",
-    "User-Agent": "PNCP-Claude-Plugin/1.0",
+    "User-Agent": `PNCP-Claude-Plugin/${version}`,
   },
   timeout: 30000,
 });
