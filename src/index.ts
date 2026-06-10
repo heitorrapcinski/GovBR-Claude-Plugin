@@ -33,7 +33,7 @@ const httpClient = axios.create({
     accept: "*/*",
     "User-Agent": `GovBR-Claude-Plugin/${version}`,
   },
-  timeout: 30000,
+  timeout: 60000,
 });
 
 async function pncpGet(endpoint: string, params: Record<string, unknown>): Promise<unknown> {
@@ -97,7 +97,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           tamanhoPagina: {
             type: "integer",
-            description: "Quantidade de registros por página (máximo 500, padrão 500)",
+            description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 500)",
             default: 500,
           },
         },
@@ -128,7 +128,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           tamanhoPagina: {
             type: "integer",
-            description: "Quantidade de registros por página (máximo 500, padrão 500)",
+            description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 500)",
             default: 500,
           },
         },
@@ -194,7 +194,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           tamanhoPagina: {
             type: "integer",
-            description: "Quantidade de registros por página (máximo 500, padrão 50)",
+            description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 50)",
             default: 50,
           },
         },
@@ -248,7 +248,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           tamanhoPagina: {
             type: "integer",
-            description: "Quantidade de registros por página (máximo 500, padrão 500)",
+            description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 500)",
             default: 500,
           },
         },
@@ -291,7 +291,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           tamanhoPagina: {
             type: "integer",
-            description: "Quantidade de registros por página (máximo 500, padrão 500)",
+            description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 500)",
             default: 500,
           },
         },
@@ -335,7 +335,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           tamanhoPagina: {
             type: "integer",
-            description: "Quantidade de registros por página (máximo 500, padrão 500)",
+            description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 500)",
             default: 500,
           },
         },
