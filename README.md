@@ -7,12 +7,19 @@ Com ele você pode perguntar ao Claude coisas como:
 - *"Quais pregões eletrônicos estão com propostas abertas até amanhã?"*
 - *"Liste os contratos publicados em janeiro de 2024 pelo CNPJ X"*
 
+Ou usar o **skill `/pncp`** no Claude Code para consultas diretas em linguagem natural:
+
+```
+/pncp pregões eletrônicos abertos em SP esta semana
+```
+
 ---
 
 ## Requisitos
 
 - [Node.js](https://nodejs.org/) 18 ou superior
-- [Claude Desktop](https://claude.ai/download) (app para Mac ou Windows)
+- [Claude Desktop](https://claude.ai/download) (app para Mac ou Windows) — para uso via MCP
+- [Claude Code](https://claude.ai/code) — para uso via skill `/pncp`
 
 ---
 
@@ -221,9 +228,42 @@ Busca itens do PCA por ano e classificação superior.
 
 ---
 
-## Exemplos de uso no Claude
+## Skill `/pncp` — Claude Code
 
-Após configurar o plugin, converse normalmente com o Claude:
+O skill `/pncp` está disponível para quem usa o **Claude Code** (CLI ou extensões de IDE). Ele traduz consultas em linguagem natural diretamente para chamadas à API do PNCP.
+
+### Como usar
+
+Digite `/pncp` seguido da sua consulta:
+
+```
+/pncp pregões eletrônicos abertos em SP esta semana
+/pncp dispensas publicadas em janeiro de 2024 pelo CNPJ 00059311000126
+/pncp atas de registro de preço vigentes em 2024 no estado do RJ
+/pncp contratos assinados em março de 2024 em Brasília
+/pncp quais modalidades de contratação existem no PNCP?
+```
+
+### O que o skill faz automaticamente
+
+| Comportamento | Detalhe |
+|---|---|
+| **Escolhe a ferramenta certa** | Mapeia o pedido para o endpoint correto (contratações, atas, contratos, PCA) |
+| **Converte datas relativas** | "esta semana", "ontem", "este mês" → formato `AAAAMMDD` |
+| **Extrai filtros do texto** | UF, município (com código IBGE), CNPJ, modalidade |
+| **Formata os resultados** | Valores em R$, datas em DD/MM/AAAA, tabelas organizadas |
+| **Informa paginação** | Mostra total de registros e páginas; pergunta se deseja continuar |
+| **Sugere refinamentos** | Propõe filtros adicionais ao final da resposta |
+
+### Instalação do skill no Claude Code
+
+O skill já está incluído no repositório em `.claude/commands/pncp.md`. Para ativá-lo basta ter o repositório clonado e abrir o Claude Code na pasta do projeto — o skill `/pncp` ficará disponível automaticamente.
+
+---
+
+## Exemplos de uso no Claude Desktop
+
+Após configurar o servidor MCP, converse normalmente com o Claude:
 
 ```
 Busque os pregões eletrônicos publicados em São Paulo entre 01/06/2024 e 30/06/2024.
