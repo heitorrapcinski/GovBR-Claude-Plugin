@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pncp": {
+      "command": "node",
+      "args": ["/CAMINHO/ABSOLUTO/PARA/PNCP-ClaudePlugin/build/index.js"]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "pncp-claude-plugin",
+  "version": "1.0.0",
+  "description": "Plugin MCP para Claude interagir com a API do PNCP (Portal Nacional de Contratações Públicas)",
+  "type": "module",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsx src/index.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": ["mcp", "pncp", "licitacao", "contratacao-publica", "brazil", "claude"],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
