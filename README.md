@@ -23,55 +23,74 @@ Ou usar o **skill `/pncp`** no Claude Code para consultas diretas em linguagem n
 
 ---
 
-## Instalação
+## Instalação no Claude Desktop
 
-### 1. Clone o repositório
+### Via npx (recomendado)
 
-```bash
-git clone https://github.com/heitorrapcinski/pncp-claudeplugin.git
-cd pncp-claudeplugin
-```
+Não é necessário clonar o repositório nem instalar nada manualmente. O `npx` baixa e executa o plugin automaticamente.
 
-### 2. Instale as dependências e compile
-
-```bash
-npm install
-```
-
-O comando `npm install` já executa o build automaticamente. Para recompilar manualmente:
-
-```bash
-npm run build
-```
-
-### 3. Localize o caminho absoluto do projeto
-
-**Mac/Linux:**
-```bash
-pwd
-# Exemplo: /Users/heitor/pncp-claudeplugin
-```
-
-**Windows (PowerShell):**
-```powershell
-(Get-Location).Path
-# Exemplo: C:\Users\heitor\pncp-claudeplugin
-```
-
----
-
-## Configuração no Claude Desktop
-
-### 1. Abra o arquivo de configuração do Claude Desktop
+Abra o arquivo de configuração do Claude Desktop:
 
 | Sistema | Caminho |
 |---|---|
 | **macOS** | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | **Windows** | `%APPDATA%\Claude\claude_desktop_config.json` |
 
-Se o arquivo não existir, crie-o.
+Se o arquivo não existir, crie-o. Adicione o bloco abaixo:
 
-### 2. Adicione o servidor PNCP
+```json
+{
+  "mcpServers": {
+    "pncp": {
+      "command": "npx",
+      "args": ["-y", "pncp-claude-plugin"]
+    }
+  }
+}
+```
+
+Se você já tiver outros servidores MCP configurados, adicione apenas o bloco `"pncp": { ... }` dentro de `"mcpServers"`.
+
+Reinicie o Claude Desktop. Um ícone de martelo (🔨) aparecerá no campo de digitação indicando que as ferramentas estão disponíveis.
+
+### Via instalação manual (desenvolvimento)
+
+Use esta opção se quiser modificar o código ou contribuir com o projeto.
+
+**1. Clone o repositório**
+
+```bash
+git clone https://github.com/heitorrapcinski/pncp-claudeplugin.git
+cd pncp-claudeplugin
+```
+
+**2. Instale as dependências e compile**
+
+```bash
+npm install
+```
+
+O `npm install` já executa o build automaticamente. Para recompilar após alterações:
+
+```bash
+npm run build
+```
+
+**3. Aponte o Claude Desktop para o build local**
+
+Obtenha o caminho absoluto do projeto:
+
+```bash
+# Mac/Linux
+pwd
+# Exemplo: /Users/heitor/pncp-claudeplugin
+
+# Windows (PowerShell)
+(Get-Location).Path
+# Exemplo: C:\Users\heitor\pncp-claudeplugin
+```
+
+Edite o `claude_desktop_config.json` substituindo pelo seu caminho:
 
 **macOS / Linux:**
 ```json
@@ -97,13 +116,7 @@ Se o arquivo não existir, crie-o.
 }
 ```
 
-> **Atenção:** substitua o caminho pelo resultado do `pwd` / `Get-Location` obtido no passo anterior.
-
-Se você já tiver outros servidores MCP configurados, adicione apenas o bloco `"pncp": { ... }` dentro de `"mcpServers"`.
-
-### 3. Reinicie o Claude Desktop
-
-Feche e abra o Claude Desktop. Um ícone de martelo (🔨) aparecerá no campo de digitação indicando que as ferramentas estão disponíveis.
+Reinicie o Claude Desktop.
 
 ---
 
@@ -302,6 +315,16 @@ Para recompilar após alterações:
 ```bash
 npm run build
 ```
+
+### Publicação no npm
+
+Quando o plugin estiver testado e validado, publique com:
+
+```bash
+npm publish
+```
+
+O campo `files` no `package.json` garante que apenas o diretório `build/` seja incluído no pacote publicado — código-fonte, arquivos de configuração e dependências de desenvolvimento não são enviados.
 
 ---
 
