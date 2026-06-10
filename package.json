@@ -1,6 +1,6 @@
 {
   "name": "pncp-claude-plugin",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Plugin MCP para Claude interagir com a API do PNCP (Portal Nacional de Contratações Públicas)",
   "type": "module",
   "main": "build/index.js",
