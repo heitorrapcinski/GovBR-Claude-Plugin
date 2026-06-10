@@ -49,9 +49,9 @@ Contratos publicados em janeiro de 2024 pelo CNPJ 00059311000126.
 
 ## Instalação
 
-O servidor MCP e o comando `/pncp` são distribuídos **juntos, como um único plugin do Claude Code**. Não é necessário editar o `claude_desktop_config.json` manualmente.
+O servidor MCP e o comando `/pncp` são distribuídos **juntos, como um único plugin do Claude Desktop**. 
 
-### 1. Gere o pacote do plugin
+### Gere o pacote do plugin
 
 ```bash
 git clone https://github.com/heitorrapcinski/GovBR-Claude-Plugin.git
@@ -62,7 +62,7 @@ npm run package    # gera build/govbr-claude-plugin.plugin
 
 O `npm run package` compila o servidor num bundle autossuficiente (`build/index.cjs`, com todas as dependências embutidas) e empacota o plugin em **`build/govbr-claude-plugin.plugin`** — um arquivo pronto para upload, sem `node_modules`.
 
-### 2. Instale o plugin
+### Instale o plugin
 
 No app do Claude, abra a área de plugins (**Customize → plugins**) e escolha **"Fazer upload de plugin local"**. Selecione o arquivo **`build/govbr-claude-plugin.plugin`**.
 
@@ -71,9 +71,8 @@ O Claude lê o manifesto `.claude-plugin/plugin.json` e registra automaticamente
 - o **servidor MCP** (via `.mcp.json` → as 7 ferramentas `pncp_*`);
 - o **skill `/pncp`** (via `skills/pncp/SKILL.md`), que o Claude também invoca automaticamente quando você pede dados de contratações.
 
-> **Alternativa — "Adicionar marketplace":** instala a partir de um repositório GitHub. **Não** é usada aqui porque o bundle (`build/`) fica fora do controle de versão (`.gitignore`); para esse modo o bundle precisaria ser publicado. O **upload local** é o caminho suportado por este projeto.
 
-### 3. Confirme
+### Confirme
 
 Um ícone de ferramentas aparece no campo de digitação listando as 7 ferramentas `pncp_*`, e o comando `/pncp` fica disponível.
 
