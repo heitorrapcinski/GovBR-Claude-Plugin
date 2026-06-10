@@ -22,26 +22,6 @@ O **MCP** é a camada de acesso aos dados — ele sabe como chamar a API do PNCP
 
 ---
 
-## Exemplos de uso
-
-As duas formas funcionam tanto no **Claude Desktop** quanto no **Claude Code**:
-
-**Linguagem natural** — converse normalmente:
-```
-Quais pregões eletrônicos foram publicados em SP esta semana?
-Dispensas de licitação com propostas abertas até hoje no RJ.
-Contratos publicados em janeiro de 2024 pelo CNPJ 00059311000126.
-```
-
-**Skill `/pncp`** — prefixe com `/pncp`:
-```
-/pncp pregões eletrônicos abertos em SP esta semana
-/pncp atas de registro de preço vigentes em 2024 no RJ
-/pncp contratos assinados em março de 2024 em Brasília
-```
-
----
-
 ## Requisitos
 
 - [Node.js](https://nodejs.org/) 22 ou superior — para **compilar** o plugin (gerar o bundle). O plugin já compilado roda sem `node_modules`.
