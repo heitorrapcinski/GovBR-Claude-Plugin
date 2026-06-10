@@ -18,7 +18,7 @@ const httpClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     accept: "*/*",
-    "User-Agent": `PNCP-Claude-Plugin/${version}`,
+    "User-Agent": `GovBR-Claude-Plugin/${version}`,
   },
   timeout: 30000,
 });
@@ -49,7 +49,7 @@ async function pncpGet(endpoint: string, params: Record<string, unknown>): Promi
 }
 
 const server = new Server(
-  { name: "pncp-plugin", version },
+  { name: "govbr-claude-plugin", version },
   { capabilities: { tools: {} } }
 );
 

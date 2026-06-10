@@ -1,4 +1,4 @@
-# PNCP Claude Plugin
+# GovBR Claude Plugin
 
 Plugin que integra o **Claude** ao **Portal Nacional de Contratações Públicas (PNCP)**, permitindo consultar licitações, contratos, atas e planos de contratações diretamente na conversa — sem sair do Claude.
 
@@ -10,6 +10,15 @@ O plugin é composto por duas partes que funcionam em conjunto:
 | **Skill `/pncp`** | Interface em linguagem natural que usa as ferramentas do MCP | Claude Code (CLI e IDEs) |
 
 O **MCP** é a camada de acesso aos dados — ele sabe como chamar a API do PNCP. O **skill** é a camada de interpretação — ele entende o que você quer dizer em português e decide qual ferramenta usar e com quais parâmetros.
+
+---
+
+## API base
+
+- **Base URL:** `https://pncp.gov.br/api/consulta`
+- **Documentação oficial (Swagger):** `https://pncp.gov.br/api/consulta/swagger-ui/index.html`
+- **Manual de consumo da API (v1.0):** [ManualPNCPAPIConsultas v1.0 (PDF)](https://www.gov.br/pncp/pt-br/pncp/manuais/versoes-anteriores/ManualPNCPAPIConsultasVerso1.0.pdf/@@display-file/file)
+- **Protocolo:** REST/JSON, sem autenticação necessária para consultas
 
 ---
 
@@ -39,9 +48,69 @@ Contratos publicados em janeiro de 2024 pelo CNPJ 00059311000126.
 
 ---
 
+## Desenvolvimento e publicação
+
+### Clonando o Repositório
+
+```bash
+git clone https://github.com/heitorrapcinski/GovBR-Claude-Plugin.git
+cd GovBR-Claude-Plugin
+```
+
+### Rodando localmente
+
+```bash
+# Instalar dependências e compilar
+npm install
+
+# Modo desenvolvimento (sem compilar)
+npm run dev
+
+# Recompilar após alterações
+npm run build
+```
+
+Para apontar o Claude Desktop ao build local em vez do npx, edite o `claude_desktop_config.json`:
+
+**macOS / Linux:**
+```json
+{
+  "mcpServers": {
+    "pncp": {
+      "command": "node",
+      "args": ["/caminho/para/GovBR-Claude-Plugin/build/index.js"]
+    }
+  }
+}
+```
+
+**Windows:**
+```json
+{
+  "mcpServers": {
+    "pncp": {
+      "command": "node",
+      "args": ["C:\\caminho\\para\\GovBR-Claude-Plugin\\build\\index.js"]
+    }
+  }
+}
+```
+
+### Publicando no npm
+
+Quando o plugin estiver testado e validado:
+
+```bash
+npm publish
+```
+
+O campo `files` no `package.json` garante que apenas o diretório `build/` seja enviado ao npm — código-fonte, arquivos de configuração e dependências de desenvolvimento ficam de fora.
+
+---
+
 ## Instalação
 
-### 1. Servidor MCP no Claude Desktop
+### Servidor MCP no Claude Desktop
 
 O MCP é instalado via `npx` — não é necessário clonar o repositório nem instalar nada manualmente.
 
@@ -59,7 +128,7 @@ Se o arquivo não existir, crie-o. Adicione o bloco abaixo:
   "mcpServers": {
     "pncp": {
       "command": "npx",
-      "args": ["-y", "pncp-claude-plugin"]
+      "args": ["-y", "govbr-claude-plugin"]
     }
   }
 }
@@ -69,14 +138,9 @@ Se você já tiver outros servidores MCP configurados, adicione apenas o bloco `
 
 Reinicie o Claude Desktop. Um ícone de martelo (🔨) aparecerá no campo de digitação indicando que as ferramentas estão ativas.
 
-### 2. Skill `/pncp` no Claude Code
+### Skill `/pncp` no Claude Code
 
-O skill está incluído no repositório em `.claude/commands/pncp.md`. Para ativá-lo, clone o repositório e abra o Claude Code na pasta do projeto:
-
-```bash
-git clone https://github.com/heitorrapcinski/pncp-claudeplugin.git
-cd pncp-claudeplugin
-```
+O skill está incluído no repositório em `.claude/commands/pncp.md`. Para ativá-lo inclua ele no seu repositório e abra o Claude Code.
 
 O skill `/pncp` ficará disponível automaticamente no Claude Code. Ele depende do servidor MCP estar configurado no Claude Desktop para funcionar.
 
@@ -227,70 +291,3 @@ Busca itens do PCA por ano e classificação superior.
 | `pagina` | inteiro | ✅ | Número da página |
 | `tamanhoPagina` | inteiro | Não | Registros por página (máx 500) |
 
----
-
-## Desenvolvimento e publicação
-
-### Rodando localmente
-
-```bash
-# Instalar dependências e compilar
-npm install
-
-# Modo desenvolvimento (sem compilar)
-npm run dev
-
-# Recompilar após alterações
-npm run build
-```
-
-Para apontar o Claude Desktop ao build local em vez do npx, edite o `claude_desktop_config.json`:
-
-**macOS / Linux:**
-```json
-{
-  "mcpServers": {
-    "pncp": {
-      "command": "node",
-      "args": ["/caminho/para/pncp-claudeplugin/build/index.js"]
-    }
-  }
-}
-```
-
-**Windows:**
-```json
-{
-  "mcpServers": {
-    "pncp": {
-      "command": "node",
-      "args": ["C:\\caminho\\para\\pncp-claudeplugin\\build\\index.js"]
-    }
-  }
-}
-```
-
-### Publicando no npm
-
-Quando o plugin estiver testado e validado:
-
-```bash
-npm publish
-```
-
-O campo `files` no `package.json` garante que apenas o diretório `build/` seja enviado ao npm — código-fonte, arquivos de configuração e dependências de desenvolvimento ficam de fora.
-
----
-
-## API base
-
-- **Base URL:** `https://pncp.gov.br/api/consulta`
-- **Documentação oficial (Swagger):** `https://pncp.gov.br/api/consulta/swagger-ui/index.html`
-- **Manual de consumo da API (v1.0):** [ManualPNCPAPIConsultas v1.0 (PDF)](https://www.gov.br/pncp/pt-br/pncp/manuais/versoes-anteriores/ManualPNCPAPIConsultasVerso1.0.pdf/@@display-file/file)
-- **Protocolo:** REST/JSON, sem autenticação necessária para consultas
-
----
-
-## Suporte ao PNCP
-
-Em caso de problemas com os dados retornados pela API, entre em contato com a Central de Atendimento do Ministério da Gestão e da Inovação em Serviços Públicos pelo telefone **0800 978 9001**.
