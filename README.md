@@ -22,6 +22,10 @@ O **MCP** é a camada de acesso aos dados — ele sabe como chamar a API do PNCP
 
 ---
 
+> ⚠️ **Desempenho e estabilidade da API do PNCP.** O portal é lento e oscila: respostas válidas chegam a levar ~50s e, sob carga, os endpoints de **contratações** (`/contratacoes/publicacao` e `/contratacoes/proposta`) frequentemente devolvem `500`/`504`. Para reduzir falhas, **use intervalos de datas curtos** (idealmente ≤ 1 mês, fatiando consultas longas) e sempre informe a modalidade. Erros `500`/`504`/timeout indicam instabilidade do PNCP — repita a consulta ou reduza o período. O timeout do cliente é de 90s (ajustável via variável de ambiente `PNCP_TIMEOUT_MS`).
+
+---
+
 ## Requisitos
 
 - [Node.js](https://nodejs.org/) 22 ou superior — para **compilar** o plugin (gerar o bundle). O plugin já compilado roda sem `node_modules`.

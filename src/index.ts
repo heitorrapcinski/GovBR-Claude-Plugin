@@ -27,13 +27,19 @@ const version = resolveVersion();
 
 const BASE_URL = "https://pncp.gov.br/api/consulta";
 
+// A API do PNCP é lenta: respostas válidas chegam a levar ~50s. O gateway do
+// próprio portal devolve 504 por volta de ~70s, então um timeout de cliente um
+// pouco acima disso evita derrubar respostas lentas porém válidas sem deixar a
+// chamada pendurada indefinidamente. Configurável via PNCP_TIMEOUT_MS.
+const TIMEOUT_MS = Number(process.env.PNCP_TIMEOUT_MS) || 90000;
+
 const httpClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     accept: "*/*",
     "User-Agent": `GovBR-Claude-Plugin/${version}`,
   },
-  timeout: 60000,
+  timeout: TIMEOUT_MS,
 });
 
 async function pncpGet(endpoint: string, params: Record<string, unknown>): Promise<unknown> {
@@ -52,9 +58,32 @@ async function pncpGet(endpoint: string, params: Record<string, unknown>): Promi
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError) {
-      const status = error.response?.status;
-      const data = error.response?.data;
+      // Sem resposta = timeout ou falha de rede. Não há status HTTP aqui (era
+      // por isso que a mensagem antiga dizia "HTTP undefined").
+      if (!error.response) {
+        if (error.code === "ECONNABORTED" || /timeout/i.test(error.message)) {
+          throw new Error(
+            `A API do PNCP não respondeu dentro de ${Math.round(TIMEOUT_MS / 1000)}s. ` +
+              `O portal está lento/instável no momento. Tente novamente, ou reduza o intervalo ` +
+              `de datas (ex.: uma semana ou um dia) e use um tamanhoPagina menor.`
+          );
+        }
+        throw new Error(
+          `Falha de conexão com a API do PNCP (${error.code ?? "rede"}): ${error.message}. ` +
+            `Verifique sua conexão e tente novamente.`
+        );
+      }
+
+      const status = error.response.status;
+      const data = error.response.data;
       const msg = typeof data === "string" ? data : JSON.stringify(data);
+      // 5xx = instabilidade do servidor do PNCP, não erro de parâmetros.
+      if (status >= 500) {
+        throw new Error(
+          `A API do PNCP retornou erro de servidor (HTTP ${status}) — instabilidade temporária do portal. ` +
+            `Tente novamente em alguns instantes ou reduza o intervalo de datas da consulta.`
+        );
+      }
       throw new Error(`Erro PNCP HTTP ${status}: ${msg || error.message}`);
     }
     throw error;

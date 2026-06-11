@@ -34,9 +34,31 @@ Interprete o pedido e execute a consulta adequada usando as ferramentas MCP do P
 - **Município:** se informado, obtenha o código IBGE correspondente pelo seu conhecimento (ex: São Paulo = 3550308, Rio de Janeiro = 3304557, Brasília/DF = 5300108).
 - **Pagina:** use sempre `1` na primeira consulta.
 
+### 2.5 Valide a consulta ANTES de chamar a ferramenta — pergunte se faltar o essencial
+
+A API do PNCP é **pesada e lenta**: consultas amplas ou sem os filtros mínimos frequentemente estouram o tempo limite (timeout/erro 500/504). Por isso, **não adivinhe** parâmetros obrigatórios nem assuma intervalos longos. Antes de chamar a ferramenta, confira a tabela de requisitos mínimos abaixo e, se faltar algo ou o pedido estiver ambíguo, **faça uma pergunta objetiva ao usuário** (de preferência tudo de uma vez) em vez de executar uma consulta provavelmente inútil.
+
+| Ferramenta | Mínimo necessário para uma consulta útil | Pergunte se faltar |
+|---|---|---|
+| `pncp_consultar_contratacoes_publicacao` | intervalo de datas **curto** (idealmente ≤ 1 mês) + modalidade | período e modalidade |
+| `pncp_consultar_contratacoes_proposta` | data-limite + modalidade | data-limite e modalidade |
+| `pncp_consultar_contratos` | intervalo de datas (idealmente ≤ 1 mês) | período |
+| `pncp_consultar_atas` | intervalo de datas de vigência | período |
+| `pncp_consultar_itens_pca_usuario` | ano + idUsuario | ano e idUsuario |
+| `pncp_consultar_itens_pca` | ano + codigoClassificacaoSuperior | ano e classificação |
+
+Regras de validação:
+
+- **Sem período definido?** Pergunte o intervalo de datas — **não** assuma "o ano todo" nem vários meses, pois isso causa timeout. Se o usuário insistir em não informar, proponha um intervalo curto e recente (ex.: o mês corrente) e confirme.
+- **"Editais" / "licitações" sem modalidade?** O termo é ambíguo (um edital pode ser pregão, concorrência, concurso, etc.). Pergunte qual modalidade, ou ofereça a mais comum (Pregão Eletrônico, código 6) e confirme.
+- **CNPJ informado mas sem período/modalidade** (ex.: "editais do órgão X"): tem o filtro de órgão, mas ainda faltam período e modalidade — pergunte os dois antes de consultar.
+- **Intervalo muito longo** (> ~1 mês em endpoints de contratações/contratos/atas): avise que pode dar timeout e sugira fatiar por mês.
+
+Use a ferramenta `AskUserQuestion` quando for prático, ou faça a pergunta em texto. Só prossiga para a consulta quando tiver o mínimo da tabela acima.
+
 ### 3. Execute a consulta
 
-Chame a ferramenta identificada com os parâmetros extraídos. Se faltar algum parâmetro obrigatório que não possa ser inferido, pergunte ao usuário antes de chamar.
+Com os parâmetros validados, chame a ferramenta identificada. Se a chamada retornar **timeout, 500 ou 504**, isso indica lentidão/instabilidade temporária do PNCP (não um erro do plugin): informe o usuário, e ofereça repetir a consulta com um **intervalo de datas menor** (ex.: uma semana ou um dia) ou tentar novamente em alguns instantes. Não repita a mesma consulta ampla em loop.
 
 ### 4. Apresente os resultados
 
