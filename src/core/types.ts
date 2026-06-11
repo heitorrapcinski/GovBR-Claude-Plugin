@@ -15,6 +15,12 @@ export interface ParamDef {
   enum?: Array<string | number>;
   /** Valor padrão exibido no schema (não é enviado automaticamente). */
   default?: string | number | boolean;
+  /**
+   * Onde o parâmetro entra na requisição:
+   * - "query" (padrão): vira querystring.
+   * - "path": substitui o placeholder `{nome}` no `path` da ferramenta.
+   */
+  location?: "path" | "query";
 }
 
 /**

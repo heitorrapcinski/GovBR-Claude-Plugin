@@ -158,9 +158,13 @@ Cada skill interpreta o pedido, escolhe a ferramenta certa, converte datas (PNCP
 
 ## Referência das ferramentas MCP
 
-### Servidor `pncp` (7 ferramentas)
+### Servidor `pncp` (10 ferramentas)
 
-`pncp_tabelas_dominio`, `pncp_consultar_contratacoes_publicacao`, `pncp_consultar_contratacoes_proposta`, `pncp_consultar_atas`, `pncp_consultar_contratos`, `pncp_consultar_itens_pca_usuario`, `pncp_consultar_itens_pca`.
+Consulta por período: `pncp_consultar_contratacoes_publicacao`, `pncp_consultar_contratacoes_proposta`, `pncp_consultar_atas`, `pncp_consultar_contratos`, `pncp_consultar_itens_pca_usuario`, `pncp_consultar_itens_pca`. Domínio: `pncp_tabelas_dominio`.
+
+Detalhe **por contratação** (a partir do número de controle PNCP `CNPJ-1-SEQUENCIAL/ANO`): `pncp_consultar_itens` (itens da contratação), `pncp_consultar_resultado_item` (proposta vencedora/adjudicada + valor homologado por item), `pncp_consultar_arquivos` (edital e anexos com URL de download). Úteis para **pesquisa de preço a partir de um pregão de referência**: pregão → itens → vencedores e valores → edital.
+
+> ℹ️ A API entrega "quem venceu cada item e por quanto" e, dos documentos, expõe **apenas o Edital**. Os **demais anexos** (termos de homologação/julgamento, relatórios), onde está o detalhe das propostas — **marca, modelo e valor** por proposta —, **não vêm por API**: ficam no portal Compras.gov.br, com download protegido (anti-bot). Nesse ponto o skill orienta o usuário a baixar os anexos e o Claude os parseia (ver `skills/compras/SKILL.md`, seção 5.5).
 
 Datas no formato `AAAAMMDD`. Veja os parâmetros detalhados de cada ferramenta na própria descrição exposta pelo MCP.
 

@@ -9,6 +9,41 @@ import { createApiHttpClient } from "./http.js";
 import type { ApiDefinition, ToolDef } from "./types.js";
 import { resolveVersion } from "./version.js";
 
+/**
+ * Separa os argumentos entre parâmetros de caminho (substituídos no `path`) e de
+ * querystring. Placeholders `{nome}` no path são preenchidos com os args marcados
+ * como `location: "path"`. Retorna o path resolvido e os args restantes (query).
+ */
+function resolveHttpCall(
+  tool: ToolDef,
+  args: Record<string, unknown>
+): { path: string; query: Record<string, unknown> } {
+  const pathParamNames = new Set(
+    (tool.params ?? []).filter((p) => p.location === "path").map((p) => p.name)
+  );
+
+  let path = tool.path as string;
+  const query: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(args)) {
+    if (pathParamNames.has(key)) {
+      if (value === undefined || value === null || value === "") {
+        throw new Error(`Parâmetro de caminho obrigatório ausente: ${key}`);
+      }
+      path = path.replace(`{${key}}`, encodeURIComponent(String(value)));
+    } else {
+      query[key] = value;
+    }
+  }
+
+  const faltando = [...path.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+  if (faltando.length > 0) {
+    throw new Error(`Parâmetro(s) de caminho obrigatório(s) ausente(s): ${faltando.join(", ")}`);
+  }
+
+  return { path, query };
+}
+
 /** Converte a definição declarativa de parâmetros em JSON Schema para o MCP. */
 function buildInputSchema(tool: ToolDef): Tool["inputSchema"] {
   const properties: Record<string, object> = {};
@@ -57,9 +92,13 @@ export async function startApiServer(def: ApiDefinition): Promise<void> {
     try {
       if (!tool) throw new Error(`Ferramenta desconhecida: ${name}`);
 
-      const result = tool.handler
-        ? await tool.handler(safeArgs)
-        : await http.get(tool.path as string, safeArgs);
+      let result: unknown;
+      if (tool.handler) {
+        result = await tool.handler(safeArgs);
+      } else {
+        const { path, query } = resolveHttpCall(tool, safeArgs);
+        result = await http.get(path, query);
+      }
 
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],

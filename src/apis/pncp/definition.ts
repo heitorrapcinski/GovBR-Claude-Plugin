@@ -6,6 +6,16 @@ const MODALIDADES =
   "5=Concorrência Presencial, 6=Pregão Eletrônico, 7=Pregão Presencial, 8=Dispensa de Licitação, " +
   "9=Inexigibilidade, 10=Manifestação de Interesse, 11=Pré-qualificação, 12=Credenciamento, 13=Leilão Presencial";
 
+// Endpoints "por contratação" ficam na API principal do PNCP (base diferente da
+// de consulta). Como são URLs absolutas, o axios ignora a baseURL do cliente.
+// O número de controle PNCP "CNPJ-1-SEQUENCIAL/ANO" (ex.: 33683111000107-1-000084/2025)
+// decompõe em cnpj=33683111000107, anoCompra=2025, sequencialCompra=84.
+const PNCP_API = "https://pncp.gov.br/api/pncp/v1";
+
+const ALVO_CONTRATACAO =
+  "Identifique a contratação pelo número de controle PNCP no formato CNPJ-1-SEQUENCIAL/ANO " +
+  "(ex.: 33683111000107-1-000084/2025 → cnpj=33683111000107, anoCompra=2025, sequencialCompra=84).";
+
 export const pncpDefinition: ApiDefinition = {
   serverName: "govbr-pncp",
   apiLabel: "PNCP",
@@ -129,6 +139,60 @@ export const pncpDefinition: ApiDefinition = {
         { name: "codigoUnidadeAdministrativa", type: "string", description: "Código da unidade administrativa - opcional" },
         { name: "usuarioId", type: "integer", description: "ID do portal/sistema que publicou o contrato - opcional" },
         { name: "tamanhoPagina", type: "integer", description: "Quantidade de registros por página (mínimo 10, máximo 500, padrão 500)", default: 500 },
+      ],
+    },
+    {
+      name: "pncp_consultar_itens",
+      description:
+        "Lista os ITENS de uma contratação específica do PNCP (licitação/pregão/dispensa). " +
+        "Retorna, por item: número do item, descrição, material ou serviço, quantidade, unidade de medida, " +
+        "valor unitário estimado, valor total, critério de julgamento, categoria do item e indicador de orçamento sigiloso. " +
+        ALVO_CONTRATACAO +
+        " Use depois de localizar a contratação (ex.: via pncp_consultar_contratacoes_publicacao ou compras_contratacoes).",
+      path: `${PNCP_API}/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/itens`,
+      required: ["cnpj", "anoCompra", "sequencialCompra"],
+      params: [
+        { name: "cnpj", type: "string", description: "CNPJ do órgão, somente dígitos", location: "path" },
+        { name: "anoCompra", type: "integer", description: "Ano da compra (ex: 2025)", location: "path" },
+        { name: "sequencialCompra", type: "integer", description: "Sequencial da compra no PNCP (sem zeros à esquerda, ex: 84)", location: "path" },
+        { name: "pagina", type: "integer", description: "Número da página (começa em 1)", default: 1 },
+        { name: "tamanhoPagina", type: "integer", description: "Registros por página (padrão 50)", default: 50 },
+      ],
+    },
+    {
+      name: "pncp_consultar_resultado_item",
+      description:
+        "Retorna o RESULTADO de um item específico de uma contratação do PNCP — ou seja, a proposta vencedora/adjudicada. " +
+        "Inclui: fornecedor vencedor (CNPJ/CPF e razão social), porte, quantidade homologada, " +
+        "valor unitário e total homologados, percentual de desconto, ordem de classificação (para SRP) e situação do resultado. " +
+        "OBS: a API não expõe marca/modelo do produto ofertado nem o arquivo da proposta — esses ficam no Edital/anexos (ver pncp_consultar_arquivos) ou no portal Compras.gov.br. " +
+        ALVO_CONTRATACAO +
+        " O número do item vem de pncp_consultar_itens.",
+      path: `${PNCP_API}/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/itens/{numeroItem}/resultados`,
+      required: ["cnpj", "anoCompra", "sequencialCompra", "numeroItem"],
+      params: [
+        { name: "cnpj", type: "string", description: "CNPJ do órgão, somente dígitos", location: "path" },
+        { name: "anoCompra", type: "integer", description: "Ano da compra (ex: 2025)", location: "path" },
+        { name: "sequencialCompra", type: "integer", description: "Sequencial da compra no PNCP (ex: 84)", location: "path" },
+        { name: "numeroItem", type: "integer", description: "Número do item na contratação (de pncp_consultar_itens)", location: "path" },
+      ],
+    },
+    {
+      name: "pncp_consultar_arquivos",
+      description:
+        "Lista os ARQUIVOS/documentos de uma contratação do PNCP (edital, anexos, termo de referência, etc.), " +
+        "cada um com título, tipo de documento e URL de download. " +
+        "Útil para baixar o Edital e ler a especificação técnica exigida. " +
+        "OBS: normalmente a proposta comercial/técnica do vencedor NÃO é publicada aqui — só o edital e anexos do processo. " +
+        ALVO_CONTRATACAO,
+      path: `${PNCP_API}/orgaos/{cnpj}/compras/{anoCompra}/{sequencialCompra}/arquivos`,
+      required: ["cnpj", "anoCompra", "sequencialCompra"],
+      params: [
+        { name: "cnpj", type: "string", description: "CNPJ do órgão, somente dígitos", location: "path" },
+        { name: "anoCompra", type: "integer", description: "Ano da compra (ex: 2025)", location: "path" },
+        { name: "sequencialCompra", type: "integer", description: "Sequencial da compra no PNCP (ex: 84)", location: "path" },
+        { name: "pagina", type: "integer", description: "Número da página (começa em 1)", default: 1 },
+        { name: "tamanhoPagina", type: "integer", description: "Registros por página (padrão 50)", default: 50 },
       ],
     },
     {
