@@ -23,7 +23,22 @@ Interprete o pedido e execute a consulta adequada usando as ferramentas MCP do P
 | Atas de registro de preço | `pncp_consultar_atas` |
 | Contratos assinados/publicados | `pncp_consultar_contratos` |
 | Plano de Contratações Anual (PCA) | `pncp_consultar_itens_pca_usuario` ou `pncp_consultar_itens_pca` |
+| **Itens** de uma contratação específica | `pncp_consultar_itens` |
+| **Resultado/vencedor** (proposta adjudicada) de um item | `pncp_consultar_resultado_item` |
+| **Arquivos/documentos** (edital, anexos) de uma contratação | `pncp_consultar_arquivos` |
 | Códigos de modalidade, tipo de contrato, amparo legal, etc. | `pncp_tabelas_dominio` |
+
+#### Detalhar uma contratação específica (itens → vencedores → documentos)
+
+As três ferramentas acima trabalham sobre **uma contratação**, identificada pelo número de controle PNCP no formato `CNPJ-1-SEQUENCIAL/ANO`. Decomponha-o assim: `33683111000107-1-000084/2025` → `cnpj=33683111000107`, `anoCompra=2025`, `sequencialCompra=84` (sem zeros à esquerda).
+
+Fluxo típico de **pesquisa de preço a partir de um pregão de referência**:
+1. Localize o pregão (ex.: `pncp_consultar_contratacoes_publicacao` ou, via Compras, `compras_contratacoes`) e pegue o número de controle PNCP.
+2. `pncp_consultar_itens` → liste os itens (descrição, quantidade, valor estimado).
+3. Para cada item de interesse, `pncp_consultar_resultado_item` → fornecedor vencedor + **valor unitário/total homologado** (e ordem de classificação no caso de SRP).
+4. `pncp_consultar_arquivos` → baixe o **Edital/Termo de Referência** para ler a especificação técnica exigida.
+
+**Limite importante:** dos documentos da contratação, a API expõe **apenas o Edital** (`pncp_consultar_arquivos` lista só ele). Os **demais anexos** — termos de homologação/julgamento, relatórios, declarações — **não vêm por API**, e é neles que está o detalhe das propostas (marca, modelo e valor por proposta). A API entrega "quem venceu cada item e por quanto" + o edital. Quando o usuário precisar desses anexos (ex.: marca/modelo para pesquisa de preço), faça o *handoff* ao portal: pegue o `idCompra` (campo da resposta de `compras_contratacoes`), ofereça o link `https://cnetmobile.estaleiro.serpro.gov.br/comprasnet-web/public/compras/acompanhamento-compra?compra={idCompra}`, peça para o usuário baixar **"Todos os relatórios e termos"** (botão "Downloads relacionados a compra") e anexar o ZIP — então **você** extrai marca/modelo/valor por item dos PDFs `relatorio-termo-homologacao-*`/`relatorio-julg-hab-*`. O download é por link protegido (anti-bot), por isso o passo manual. (Detalhes no skill `/compras`, seção 5.5.)
 
 ### 2. Extraia os parâmetros do pedido
 

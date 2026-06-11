@@ -91,6 +91,24 @@ A resposta padrão traz `resultado` (lista), `totalRegistros`, `totalPaginas` e 
 - Se vier vazio (`totalRegistros = 0`), diga claramente e sugira ajustar filtros/período.
 - Se houver mais páginas, pergunte se deseja continuar (próxima `pagina`).
 
+### 5.5 Anexos que a API NÃO traz: oriente o usuário a complementar pelo portal
+
+A API aberta expõe, como documento, **apenas o Edital** (`pncp_consultar_arquivos` lista só ele). Os **demais anexos da compra** — termos de homologação, julgamento/habilitação, relatórios e declarações — **não vêm por API**, e é justamente neles que está o detalhe das propostas: **marca, modelo e valor de cada proposta** por item (essencial para pesquisa de preço). As ferramentas de resultado (`compras_contratacoes_itens_resultado` / `pncp_consultar_resultado_item`) entregam "quem venceu cada item e por quanto", mas não esses anexos. Como o download deles é feito por **link protegido (anti-bot)**, não tente obtê-lo via API: faça um *handoff* ao usuário e depois **continue a análise** com os arquivos que ele trouxer.
+
+Como conduzir:
+
+1. **Pegue o `idCompra`** da resposta de `compras_contratacoes` (campo `idCompra`, ex.: `80308005910312025`).
+2. **Monte e ofereça o link do portal** (Acompanhar Contratação):
+   `https://cnetmobile.estaleiro.serpro.gov.br/comprasnet-web/public/compras/acompanhamento-compra?compra={idCompra}`
+3. **Instrua o usuário** a clicar no botão **"Downloads relacionados a compra"** (ícone de download) e baixar:
+   - **"Edital"** → especificação técnica **exigida** (casa com os requisitos que o usuário tem em mãos);
+   - **"Todos os relatórios e termos"** → um ZIP com, por item, os **Termos de Homologação** e **Julgamento/Habilitação**, que listam cada proposta com **Marca/Fabricante, Modelo/versão e valor** (é aqui que está a marca/modelo do vencedor e dos demais classificados);
+   - opcionalmente **"Relatório das declarações"**.
+   Peça que ele **anexe o ZIP/PDFs** na conversa.
+4. **Ao receber os arquivos, continue a análise você mesmo**: descompacte o ZIP, leia os PDFs (`relatorio-termo-homologacao-*` e `relatorio-julg-hab-*`) e **estruture por item**: fornecedor, **marca**, **modelo**, valor unitário/total da proposta e situação (homologado/desclassificado). Cruze com os valores homologados de `pncp_consultar_resultado_item` / `compras_contratacoes_itens_resultado` e com a especificação exigida no edital.
+
+Explique o porquê em uma linha: são dados **públicos** (transparência), mas o portal os entrega por download protegido, fora da API aberta — por isso o passo manual de baixar e trazer os arquivos.
+
 ### 6. Ofereça próximos passos
 
-Sugira refinamentos úteis: restringir por UF/município, CNPJ do órgão ou fornecedor; descer ao detalhe (itens, resultado, adesões, empenhos); cruzar catálogo × pesquisa de preço; buscar a próxima página.
+Sugira refinamentos úteis: restringir por UF/município, CNPJ do órgão ou fornecedor; descer ao detalhe (itens, resultado, adesões, empenhos); cruzar catálogo × pesquisa de preço; buscar a próxima página. Quando o foco for pesquisa de preço com marca/modelo, ofereça o *handoff* do portal descrito em **5.5**.
