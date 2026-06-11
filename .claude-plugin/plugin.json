@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "govbr-claude-plugin",
   "displayName": "GovBR Claude Plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Integra o Claude ao PNCP (Portal Nacional de Contratações Públicas): consulta licitações, contratos, atas e planos de contratações. Inclui o servidor MCP e o comando /pncp.",
   "author": {
     "name": "Heitor Rapcinski",
