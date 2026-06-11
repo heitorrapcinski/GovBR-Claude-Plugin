@@ -1,3 +1,5 @@
+// Tabelas de domínio do PNCP (códigos e nomes usados nas consultas).
+// Servidas localmente pela ferramenta pncp_tabelas_dominio, sem chamada de rede.
 export const DOMAIN_TABLES = {
   instrumento_convocatorio: [
     { codigo: 1, nome: "Edital", descricao: "Diálogo competitivo, concurso, concorrência, pregão, manifestação de interesse, pré-qualificação e credenciamento" },
