@@ -1,12 +1,8 @@
 {
   "name": "govbr-claude-plugin",
-  "version": "0.1.0",
-  "description": "Plugin MCP para Claude interagir com a API do PNCP (Portal Nacional de Contratações Públicas)",
+  "version": "0.2.0",
+  "description": "Plugin MCP para Claude interagir com APIs do governo brasileiro (PNCP e Compras.gov.br)",
   "type": "module",
-  "main": "build/index.cjs",
-  "bin": {
-    "govbr-claude-plugin": "build/index.cjs"
-  },
   "files": [
     "build/"
   ],
@@ -14,15 +10,19 @@
     "build": "node build.mjs",
     "package": "npm run build && node package.mjs",
     "typecheck": "tsc --noEmit",
-    "start": "node build/index.cjs",
-    "dev": "tsx src/index.ts",
+    "start:pncp": "node build/pncp.cjs",
+    "start:compras": "node build/compras.cjs",
+    "dev:pncp": "tsx src/apis/pncp/index.ts",
+    "dev:compras": "tsx src/apis/compras/index.ts",
     "prepare": "npm run build"
   },
   "keywords": [
     "mcp",
     "pncp",
+    "compras-gov",
     "licitacao",
     "contratacao-publica",
+    "dados-abertos",
     "brazil",
     "claude"
   ],

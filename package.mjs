@@ -4,8 +4,11 @@
 import AdmZip from "adm-zip";
 import { mkdirSync, existsSync } from "node:fs";
 
-if (!existsSync("build/index.cjs")) {
-  console.error("build/index.cjs não encontrado. Rode `npm run build` antes.");
+// Bundles de servidor MCP gerados por build.mjs (um por API).
+const bundles = ["build/pncp.cjs", "build/compras.cjs"];
+const faltando = bundles.filter((b) => !existsSync(b));
+if (faltando.length > 0) {
+  console.error(`Bundle(s) não encontrado(s): ${faltando.join(", ")}. Rode \`npm run build\` antes.`);
   process.exit(1);
 }
 
@@ -13,7 +16,7 @@ const zip = new AdmZip();
 zip.addLocalFolder(".claude-plugin", ".claude-plugin");
 zip.addLocalFile(".mcp.json");
 zip.addLocalFolder("skills", "skills");
-zip.addLocalFile("build/index.cjs", "build");
+for (const bundle of bundles) zip.addLocalFile(bundle, "build");
 zip.addLocalFile("README.md");
 
 mkdirSync("build", { recursive: true });

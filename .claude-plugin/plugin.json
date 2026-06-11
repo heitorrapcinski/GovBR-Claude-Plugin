@@ -2,13 +2,13 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "govbr-claude-plugin",
   "displayName": "GovBR Claude Plugin",
-  "version": "0.1.0",
-  "description": "Integra o Claude ao PNCP (Portal Nacional de Contratações Públicas): consulta licitações, contratos, atas e planos de contratações. Inclui o servidor MCP e o comando /pncp.",
+  "version": "0.2.0",
+  "description": "Integra o Claude a APIs de dados abertos do governo brasileiro: PNCP (licitações, contratos, atas, PCA, itens/resultados/arquivos por contratação) e Compras.gov.br (catálogos, pesquisa de preço, contratações 14133, ARP, contratos, fornecedores). Inclui servidores MCP e os comandos /pncp e /compras.",
   "author": {
     "name": "Heitor Rapcinski",
     "email": "heitor.rapcinski@gmail.com"
   },
   "repository": "https://github.com/heitorrapcinski/GovBR-Claude-Plugin",
   "license": "MIT",
-  "keywords": ["pncp", "licitacao", "contratacao-publica", "brazil", "mcp", "govbr"]
+  "keywords": ["pncp", "compras-gov", "licitacao", "contratacao-publica", "dados-abertos", "brazil", "mcp", "govbr"]
 }
