@@ -6,3 +6,7 @@ build/
 # Pacote do plugin gerado para upload local
 *.zip
 *.plugin
+
+# Logs de observabilidade (caso GOVBR_LOG_DIR aponte para dentro do repo)
+*.log
+*.log.1

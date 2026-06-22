@@ -2,6 +2,22 @@ import axios, { AxiosError, type AxiosInstance } from "axios";
 import type { ApiDefinition } from "./types.js";
 
 /**
+ * Erro de chamada à API enriquecido com metadados para observabilidade.
+ * `status` é o HTTP status (quando houve resposta); `kind` classifica a falha
+ * (timeout, network, http_5xx, http_4xx, unknown) para agregação nos logs.
+ */
+export class ApiCallError extends Error {
+  constructor(
+    message: string,
+    readonly kind: string,
+    readonly status?: number
+  ) {
+    super(message);
+    this.name = "ApiCallError";
+  }
+}
+
+/**
  * Cria um cliente HTTP para uma API, com timeout configurável por variável de
  * ambiente e tratamento de erros uniforme. As mensagens são adaptadas ao rótulo
  * da API (`apiLabel`) e, para APIs lentas (`slowApi`), sugerem reduzir o período.
@@ -47,7 +63,8 @@ export function createApiHttpClient(def: ApiDefinition, version: string) {
 
 function normalizeError(error: unknown, def: ApiDefinition, timeoutMs: number): Error {
   if (!(error instanceof AxiosError)) {
-    return error instanceof Error ? error : new Error(String(error));
+    if (error instanceof Error) return new ApiCallError(error.message, "unknown");
+    return new ApiCallError(String(error), "unknown");
   }
 
   const label = def.apiLabel;
@@ -59,15 +76,17 @@ function normalizeError(error: unknown, def: ApiDefinition, timeoutMs: number): 
   // Sem resposta = timeout ou falha de rede (não há status HTTP).
   if (!error.response) {
     if (error.code === "ECONNABORTED" || /timeout/i.test(error.message)) {
-      return new Error(
+      return new ApiCallError(
         `A API do ${label} não respondeu dentro de ${segundos}s.` +
           (def.slowApi ? " O portal está lento/instável no momento." : "") +
-          dicaPeriodo
+          dicaPeriodo,
+        "timeout"
       );
     }
-    return new Error(
+    return new ApiCallError(
       `Falha de conexão com a API do ${label} (${error.code ?? "rede"}): ${error.message}. ` +
-        `Verifique sua conexão e tente novamente.`
+        `Verifique sua conexão e tente novamente.`,
+      "network"
     );
   }
 
@@ -77,10 +96,12 @@ function normalizeError(error: unknown, def: ApiDefinition, timeoutMs: number): 
 
   // 5xx = instabilidade do servidor, não erro de parâmetros.
   if (status >= 500) {
-    return new Error(
+    return new ApiCallError(
       `A API do ${label} retornou erro de servidor (HTTP ${status}) — instabilidade temporária do portal.` +
-        dicaPeriodo
+        dicaPeriodo,
+      "http_5xx",
+      status
     );
   }
-  return new Error(`Erro ${label} HTTP ${status}: ${msg || error.message}`);
+  return new ApiCallError(`Erro ${label} HTTP ${status}: ${msg || error.message}`, "http_4xx", status);
 }

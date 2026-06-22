@@ -65,6 +65,37 @@ Os comandos `/pncp` e `/compras` ficam disponíveis na barra de comandos, e o Cl
 
 ---
 
+## Observabilidade (logs)
+
+Cada servidor MCP registra suas chamadas de ferramenta para diagnóstico (latência, taxa de erro, timeouts do portal). Como o servidor se comunica por **stdio** — onde o `stdout` é reservado ao protocolo JSON‑RPC —, os logs vão para o **`stderr`** (capturado pelo Claude Code; visível com `claude --debug` ou no painel `/mcp`) e, opcionalmente, para um **arquivo**.
+
+Cada evento é uma linha estruturada. Exemplo (JSON):
+
+```json
+{"ts":"2026-06-22T14:03:11.482Z","server":"govbr-pncp","level":"info","event":"call","tool":"pncp_consultar_contratacoes_publicacao","ok":true,"durationMs":842,"status":200}
+{"ts":"2026-06-22T14:05:02.107Z","server":"govbr-pncp","level":"error","event":"call","tool":"pncp_consultar_atas","ok":false,"durationMs":90000,"errKind":"timeout"}
+```
+
+Os parâmetros das chamadas só são gravados no nível `debug`, e ainda assim **sanitizados**: strings longas são truncadas e sequências que parecem CPF (11 dígitos) ou CNPJ (14 dígitos) têm o miolo mascarado.
+
+### Configuração (variáveis de ambiente, em `.mcp.json` → `env`)
+
+| Variável | Valores | Padrão | Efeito |
+|---|---|---|---|
+| `GOVBR_LOG_LEVEL` | `silent` · `error` · `info` · `debug` | `error` | `error`: só falhas. `info`: + chamadas bem‑sucedidas e boot. `debug`: + params sanitizados. `silent`: desliga o arquivo (boot ainda sinaliza no stderr). |
+| `GOVBR_LOG_FORMAT` | `json` · `text` | `json` | Formato das linhas. `json` é ideal para parsear/agregar. |
+| `GOVBR_LOG_DIR` | caminho de pasta | vazio = padrão | Pasta dos arquivos. Vazio usa o diretório de dados do usuário (ver abaixo). |
+
+### Onde os arquivos são gravados
+
+Um arquivo por servidor (`govbr-pncp.log`, `govbr-compras.log`), com rotação simples (ao passar de 5 MB, vira `.log.1`). Por padrão em **`~/.govbr-claude-plugin/logs/`** — o mesmo caminho em qualquer SO, onde `~` é a home do usuário resolvida via `os.homedir()` (`C:\Users\…` no Windows, `/home/…` no Linux, `/Users/…` no macOS). Fica **fora do diretório de instalação do plugin**, que é sobrescrito a cada update.
+
+> O `.mcp.json` mantém `GOVBR_LOG_DIR` **vazio** de propósito: o `~` é uma convenção de shell que o Node/`.mcp.json` não expandem, então o padrão é resolvido em código. Defina `GOVBR_LOG_DIR` com um **caminho absoluto** para centralizar os logs em outro lugar.
+
+Se a pasta não puder ser criada, o servidor segue só com `stderr` — logging nunca derruba o servidor.
+
+---
+
 ## Desenvolvimento
 
 ```bash
@@ -89,6 +120,7 @@ GovBR-Claude-Plugin/
 │   ├── core/                    # framework genérico (compartilhado)
 │   │   ├── types.ts             #   ApiDefinition, ToolDef, ParamDef
 │   │   ├── http.ts              #   cliente HTTP + tratamento de erros
+│   │   ├── logger.ts            #   observabilidade (stderr + arquivo, configurável)
 │   │   ├── server.ts            #   gera o servidor MCP a partir de uma definição
 │   │   └── version.ts
 │   └── apis/                    # uma pasta por API do governo
