@@ -2,21 +2,11 @@
   "mcpServers": {
     "pncp": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/build/pncp.cjs"],
-      "env": {
-        "GOVBR_LOG_LEVEL": "error",
-        "GOVBR_LOG_FORMAT": "json",
-        "GOVBR_LOG_DIR": ""
-      }
+      "args": ["${CLAUDE_PLUGIN_ROOT}/build/pncp.cjs"]
     },
     "compras": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/build/compras.cjs"],
-      "env": {
-        "GOVBR_LOG_LEVEL": "error",
-        "GOVBR_LOG_FORMAT": "json",
-        "GOVBR_LOG_DIR": ""
-      }
+      "args": ["${CLAUDE_PLUGIN_ROOT}/build/compras.cjs"]
     }
   }
 }

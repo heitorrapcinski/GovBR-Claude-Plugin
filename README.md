@@ -78,13 +78,20 @@ Cada evento é uma linha estruturada. Exemplo (JSON):
 
 Os parâmetros das chamadas só são gravados no nível `debug`, e ainda assim **sanitizados**: strings longas são truncadas e sequências que parecem CPF (11 dígitos) ou CNPJ (14 dígitos) têm o miolo mascarado.
 
-### Configuração (variáveis de ambiente, em `.mcp.json` → `env`)
+### Configuração (variáveis de ambiente)
 
 | Variável | Valores | Padrão | Efeito |
 |---|---|---|---|
 | `GOVBR_LOG_LEVEL` | `silent` · `error` · `info` · `debug` | `error` | `error`: só falhas. `info`: + chamadas bem‑sucedidas e boot. `debug`: + params sanitizados. `silent`: desliga o arquivo (boot ainda sinaliza no stderr). |
 | `GOVBR_LOG_FORMAT` | `json` · `text` | `json` | Formato das linhas. `json` é ideal para parsear/agregar. |
-| `GOVBR_LOG_DIR` | caminho de pasta | vazio = padrão | Pasta dos arquivos. Vazio usa o diretório de dados do usuário (ver abaixo). |
+| `GOVBR_LOG_DIR` | caminho absoluto | vazio = padrão | Pasta dos arquivos. Vazio usa o diretório de dados do usuário (ver abaixo). |
+
+Os padrões já dão observabilidade útil (só falhas, em `~/.govbr-claude-plugin/logs`), então **nada precisa ser configurado**. Para ajustar, defina as variáveis acima de uma destas formas:
+
+- **Variável de ambiente do sistema** (vale para qualquer instalação): defina `GOVBR_LOG_LEVEL=info` no ambiente antes de iniciar o app do Claude.
+- **No `.mcp.json` da instalação local** (Claude Code): após instalar, adicione um bloco `env` ao servidor no `.mcp.json` instalado, ex.: `"env": { "GOVBR_LOG_LEVEL": "info" }`.
+
+> ⚠️ **Não inclua `env` no `.mcp.json` empacotado no `.plugin`.** O importador do app do Claude rejeita servidores stdio que declaram `env` (*"MCP server is a local/stdio server"*). O bloco `env` é honrado **em runtime** pelo Claude Code, mas barra a **importação** do `.plugin`. Por isso o `.mcp.json` distribuído não traz `env` — configure por uma das formas acima.
 
 ### Onde os arquivos são gravados
 
