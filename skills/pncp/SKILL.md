@@ -26,6 +26,7 @@ Interprete o pedido e execute a consulta adequada usando as ferramentas MCP do P
 | **Itens** de uma contratação específica | `pncp_consultar_itens` |
 | **Resultado/vencedor** (proposta adjudicada) de um item | `pncp_consultar_resultado_item` |
 | **Arquivos/documentos** (edital, anexos) de uma contratação | `pncp_consultar_arquivos` |
+| **Análise de resultado** (quem venceu, sob qual critério, por qual valor; "por que perdemos") | fluxo `resultado_item` + `criterio_julgamento` — ver subseção "Análise de Resultado" abaixo |
 | Códigos de modalidade, tipo de contrato, amparo legal, etc. | `pncp_tabelas_dominio` |
 
 #### Detalhar uma contratação específica (itens → vencedores → documentos)
@@ -39,6 +40,27 @@ Fluxo típico de **pesquisa de preço a partir de um pregão de referência**:
 4. `pncp_consultar_arquivos` → baixe o **Edital/Termo de Referência** para ler a especificação técnica exigida.
 
 **Limite importante:** dos documentos da contratação, a API expõe **apenas o Edital** (`pncp_consultar_arquivos` lista só ele). Os **demais anexos** — termos de homologação/julgamento, relatórios, declarações — **não vêm por API**, e é neles que está o detalhe das propostas (marca, modelo e valor por proposta). A API entrega "quem venceu cada item e por quanto" + o edital. Quando o usuário precisar desses anexos (ex.: marca/modelo para pesquisa de preço), faça o *handoff* ao portal: pegue o `idCompra` (campo da resposta de `compras_contratacoes`), ofereça o link `https://cnetmobile.estaleiro.serpro.gov.br/comprasnet-web/public/compras/acompanhamento-compra?compra={idCompra}`, peça para o usuário baixar **"Todos os relatórios e termos"** (botão "Downloads relacionados a compra") e anexar o ZIP — então **você** extrai marca/modelo/valor por item dos PDFs `relatorio-termo-homologacao-*`/`relatorio-julg-hab-*`. O download é por link protegido (anti-bot), por isso o passo manual. (Detalhes no skill `/compras`, seção 5.5.)
+
+#### Análise de Resultado (quem venceu, sob qual critério e por quê)
+
+Quando o pedido envolver **entender o resultado de uma contratação** — "quem venceu e por quanto", "por que perdemos", "como tal fornecedor tem ganhado", comparar fornecedores — parta de um princípio do domínio: em contratação pública a decisão **não é subjetiva**. O critério de julgamento é definido por lei e pelo edital, e o resultado é dado público e documentado. Não há "percepção do decisor" a investigar (como numa venda privada); a pergunta certa é **"sob qual critério, e com qual proposta, o fornecedor venceu"**, reconstruída a partir dos dados.
+
+**Ponto de partida: o critério de julgamento.** A contratação traz o campo `criterio_julgamento` (tabela de domínio homônima — consulte com `pncp_tabelas_dominio`). Ele determina **de onde vem a razão da derrota** e ramifica a análise:
+
+| Critério (código) | A derrota é explicada por… | Fonte do dado |
+|---|---|---|
+| Menor preço (1), Maior desconto (2), Maior lance (5) | **Preço.** Quantifique o *gap* entre o valor vencedor e a sua proposta. | `pncp_consultar_resultado_item` (valor homologado + ordem de classificação). **100% via API.** |
+| Técnica e preço (4), Melhor técnica (8), Conteúdo artístico (9) | **Pontuação técnica** segundo a fórmula do edital. | Edital (`pncp_consultar_arquivos`) define os critérios; a **nota atribuída** está na ata/termo de julgamento, que **não vem por API** → use o *handoff* ao portal descrito acima. |
+| Não se aplica (7) | **Não houve disputa** (dispensa/inexigibilidade). O enquadramento "concorrente" não cabe. | Foque na **justificativa** da contratação direta e em quem foi contratado, não em "derrota". |
+
+**Tipo de contratante muda a lei e onde achar o julgamento.** Antes de interpretar, identifique o regime do órgão:
+- **Lei 14.133/2021** (administração direta, autárquica, fundacional — Ministérios, agências): critérios de julgamento no art. 33. É o caso da grande maioria dos órgãos publicados no PNCP/ComprasNet.
+- **Lei 13.303/2016** (estatais — ex.: Serpro, Dataprev, BB, Caixa, Correios, BNDES, Petrobras): regime próprio de licitação, critérios no art. 54. Documentos de julgamento **frequentemente vivem no portal da própria estatal**, nem sempre no ComprasNet — avise o usuário e não prometa o *handoff* padrão sem verificar.
+- **Legado** (Lei 8.666/93, pregão Lei 10.520/02): contratos antigos (endpoints `legado_*`); o campo `criterio_julgamento` pode vir vazio ou "não se aplica" — **não assuma** o campo.
+
+**Como estruturar a análise:** monte um panorama do resultado — critério de julgamento → fornecedor vencedor → valor homologado → **posição na classificação e *gap* %** → e, quando técnica e preço, a decomposição da pontuação (via PDF do *handoff*). Tudo derivado de fato documentado. Esse mesmo panorama, repetido por contratação ao longo do tempo, é a base para comparar fornecedores (curva de preços, órgãos onde cada um ganha, faixa de pontuação técnica) — sempre sobre dado objetivo, não percepção.
+
+**Honestidade sobre o limite:** para critérios de **preço**, a análise é integralmente automatizável via API. Para **técnica e preço**, o detalhe do julgamento fica atrás do passo manual do portal — deixe isso claro ao usuário em vez de inferir a nota técnica.
 
 ### 2. Extraia os parâmetros do pedido
 

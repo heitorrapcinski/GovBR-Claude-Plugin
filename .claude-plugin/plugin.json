@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "govbr-claude-plugin",
   "displayName": "GovBR Claude Plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Integra o Claude a APIs de dados abertos do governo brasileiro: PNCP (licitações, contratos, atas, PCA, itens/resultados/arquivos por contratação) e Compras.gov.br (catálogos, pesquisa de preço, contratações 14133, ARP, contratos, fornecedores). Inclui servidores MCP e os comandos /pncp e /compras.",
   "author": {
     "name": "Heitor Rapcinski",
