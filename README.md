@@ -48,16 +48,18 @@ npm install        # instala deps e compila os bundles (script "prepare")
 npm run package    # gera build/govbr-claude-plugin.plugin
 ```
 
-O `npm run package` compila cada servidor num bundle autossuficiente (`build/pncp.cjs` e `build/compras.cjs`, com todas as dependências embutidas) e empacota o plugin em **`build/govbr-claude-plugin.plugin`** — pronto para upload, sem `node_modules`.
+O `npm run package` compila cada servidor num bundle autossuficiente (`build/pncp.cjs` e `build/compras.cjs`, com todas as dependências embutidas), empacota cada um como **MCPB** (`build/govbr-*.mcpb`) e monta o **`build/govbr-claude-plugin.plugin`** — pronto para upload, sem `node_modules`.
+
+> **Por que MCPB?** O importador de "Fazer upload de plugin local" rejeita servidores **stdio crus** (*"MCP server is a local/stdio server. Plugins may only declare remote or MCPB servers"*). O pacote por isso **não** leva o `.mcp.json` stdio; em vez disso, o `plugin.json` referencia os `.mcpb` pelo campo `mcpServers`. Esse formato é aceito nos três Personalizar — **Code, Cowork e Chat**. São dois `.mcpb` porque cada API tem `baseUrl` e cliente HTTP próprios.
 
 ### Instale o plugin
 
-No app do Claude, abra a área de plugins (**Customize → plugins**) e escolha **"Fazer upload de plugin local"**. Selecione o arquivo **`build/govbr-claude-plugin.plugin`**.
+No app do Claude, abra **Personalizar → "Fazer upload de plugin local"** e selecione **`build/govbr-claude-plugin.plugin`**. O Claude lê o `.claude-plugin/plugin.json` e registra:
 
-O Claude lê o manifesto `.claude-plugin/plugin.json` e registra automaticamente:
-
-- os **servidores MCP** (via `.mcp.json` → `pncp` e `compras`);
+- os **servidores MCP** (via `mcpServers` → os dois `.mcpb`, `pncp` e `compras`);
 - os **skills `/pncp` e `/compras`** (via `skills/*/SKILL.md`), que o Claude também invoca automaticamente conforme o pedido.
+
+> ℹ️ O MCPB embute o runtime para rodar sem `node` instalado, mas continua sendo um servidor **local** — funciona em hosts com máquina local (Code/Cowork desktop); **não** roda em sessão 100% na nuvem.
 
 ### Confirme
 
@@ -110,16 +112,19 @@ npm install         # instala deps e gera os bundles
 npm run dev:pncp    # roda o servidor PNCP direto do TypeScript (tsx)
 npm run dev:compras # roda o servidor Compras direto do TypeScript (tsx)
 npm run build       # regenera os dois bundles com esbuild
-npm run package     # gera o pacote build/govbr-claude-plugin.plugin
+npm run mcpb        # gera os bundles MCPB (build/govbr-*.mcpb)
+npm run package     # gera build/govbr-claude-plugin.plugin (mcpb embutido)
 npm run typecheck   # checagem de tipos (tsc --noEmit)
 ```
+
+> O **`.mcp.json` (stdio) na raiz é só para desenvolvimento local** — quando o Claude Code carrega o próprio repositório como plugin, ele usa esse registro (sem precisar gerar `.mcpb`). O `plugin.json` versionado **não** tem `mcpServers`, então no dev cai no `.mcp.json`; o `package.mjs` injeta o `mcpServers`→`.mcpb` só na cópia distribuída.
 
 Estrutura do plugin:
 
 ```
 GovBR-Claude-Plugin/
 ├── .claude-plugin/plugin.json   # manifesto do plugin
-├── .mcp.json                    # registra os servidores MCP (pncp + compras)
+├── .mcp.json                    # registra os servidores MCP — só dev local
 ├── skills/
 │   ├── pncp/SKILL.md            # skill /pncp
 │   └── compras/SKILL.md         # skill /compras
@@ -134,10 +139,12 @@ GovBR-Claude-Plugin/
 │       ├── pncp/                #   definition.ts + domain.ts + index.ts
 │       └── compras/             #   definition.ts + index.ts
 ├── build.mjs                    # esbuild (um bundle por API)
-├── package.mjs                  # empacotamento (.plugin)
+├── mcpb.mjs                     # empacotamento (.mcpb, um por API)
+├── package.mjs                  # empacotamento (.plugin, mcpb embutido)
 └── build/                       # gerado, gitignored
     ├── pncp.cjs                 #   bundle PNCP
     ├── compras.cjs              #   bundle Compras
+    ├── govbr-pncp.mcpb / govbr-compras.mcpb
     └── govbr-claude-plugin.plugin
 ```
 
@@ -149,7 +156,7 @@ A arquitetura é **declarativa**: o núcleo (`src/core`) transforma uma `ApiDefi
 
 1. Crie `src/apis/<nova-api>/definition.ts` exportando uma `ApiDefinition` (base URL, timeout e a lista de ferramentas, cada uma com `path`, `params` e `required` — ou um `handler` local).
 2. Crie `src/apis/<nova-api>/index.ts` chamando `startApiServer(<novaApi>Definition)`.
-3. Registre a entrada em `build.mjs`, o servidor em `.mcp.json` e o bundle em `package.mjs`.
+3. Registre a entrada em `build.mjs`, o servidor no `.mcp.json` (dev) e o bundle em `mcpb.mjs` (de onde o `package.mjs` puxa os `.mcpb`).
 4. (Opcional) Crie `skills/<nova-api>/SKILL.md` para a interface em linguagem natural.
 
 ---

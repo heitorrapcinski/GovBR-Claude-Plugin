@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "node build.mjs",
-    "package": "npm run build && node package.mjs",
+    "mcpb": "npm run build && node mcpb.mjs",
+    "package": "npm run mcpb && node package.mjs",
     "typecheck": "tsc --noEmit",
     "start:pncp": "node build/pncp.cjs",
     "start:compras": "node build/compras.cjs",

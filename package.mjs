@@ -1,22 +1,33 @@
-// Empacota o plugin num arquivo .plugin (zip) pronto para "Fazer upload de plugin local".
-// Inclui apenas o que o plugin precisa em runtime — sem node_modules, src ou .git.
-// Saída: build/govbr-claude-plugin.plugin (a pasta build/ está no .gitignore).
+// Empacota o plugin num arquivo .plugin (zip) pronto para "Fazer upload de plugin
+// local" — funciona nos três Personalizar (Code, Cowork e Chat).
+//
+// O importador do app REJEITA servidores stdio crus ("Plugins may only declare
+// remote or MCPB servers"). Por isso o pacote NÃO leva o .mcp.json stdio; em vez
+// disso embute os bundles .mcpb (gerados por mcpb.mjs) e os referencia pelo campo
+// `mcpServers` do plugin.json. O .mcp.json do repo serve só ao desenvolvimento
+// local (ver README) e não entra aqui.
+//
+// Saída: build/govbr-claude-plugin.plugin  (a pasta build/ está no .gitignore).
 import AdmZip from "adm-zip";
-import { mkdirSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 
-// Bundles de servidor MCP gerados por build.mjs (um por API).
-const bundles = ["build/pncp.cjs", "build/compras.cjs"];
-const faltando = bundles.filter((b) => !existsSync(b));
+// Bundles MCPB gerados por mcpb.mjs (um por API). São referenciados na raiz do plugin.
+const mcpbs = ["build/govbr-pncp.mcpb", "build/govbr-compras.mcpb"];
+const faltando = mcpbs.filter((b) => !existsSync(b));
 if (faltando.length > 0) {
-  console.error(`Bundle(s) não encontrado(s): ${faltando.join(", ")}. Rode \`npm run build\` antes.`);
+  console.error(`Bundle(s) .mcpb não encontrado(s): ${faltando.join(", ")}. Rode \`npm run mcpb\` antes.`);
   process.exit(1);
 }
 
+// plugin.json distribuído: o versionado não tem `mcpServers` (no dev cai no
+// .mcp.json stdio); aqui injetamos o array apontando para os .mcpb embutidos.
+const manifest = JSON.parse(readFileSync(".claude-plugin/plugin.json", "utf8"));
+manifest.mcpServers = mcpbs.map((b) => `./${b.split("/").pop()}`);
+
 const zip = new AdmZip();
-zip.addLocalFolder(".claude-plugin", ".claude-plugin");
-zip.addLocalFile(".mcp.json");
+zip.addFile(".claude-plugin/plugin.json", Buffer.from(JSON.stringify(manifest, null, 2) + "\n", "utf8"));
+for (const b of mcpbs) zip.addLocalFile(b); // vai para a raiz do plugin
 zip.addLocalFolder("skills", "skills");
-for (const bundle of bundles) zip.addLocalFile(bundle, "build");
 zip.addLocalFile("README.md");
 
 mkdirSync("build", { recursive: true });
