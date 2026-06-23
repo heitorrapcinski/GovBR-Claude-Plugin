@@ -5,7 +5,9 @@
 // Nada aqui pode lançar exceção: logging é best-effort e jamais deve derrubar o
 // servidor. Toda E/S fica protegida por try/catch silencioso.
 //
-// Configuração por variáveis de ambiente (definidas em .mcp.json → env):
+// Configuração por variáveis de ambiente. No bundle MCPB elas são passadas pelo
+// `mcp_config.env`, interpolando o `user_config` exposto na UI do app (ver mcpb.mjs);
+// em dev/stdio podem ser definidas pelo sistema ou pelo .mcp.json:
 //   GOVBR_LOG_LEVEL   silent | error | info | debug   (padrão: error)
 //   GOVBR_LOG_DIR     pasta dos arquivos de log        (padrão: dir de dados do usuário)
 //   GOVBR_LOG_FORMAT  json | text                      (padrão: json)

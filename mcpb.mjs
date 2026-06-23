@@ -68,9 +68,44 @@ for (const s of servers) {
       entry_point: `server/${s.entry}`,
       // O host lança este comando como servidor stdio. ${__dirname} é o diretório
       // do bundle desempacotado — não usar caminho absoluto da máquina de build.
+      //
+      // O `env` passa a configuração de log EXPLICITAMENTE ao processo bundlado,
+      // interpolando os valores de `user_config` (abaixo). Sem isso, o servidor só
+      // veria GOVBR_LOG_* se o app GUI herdasse o ambiente do shell — o que nem
+      // sempre acontece, deixando o log no padrão `error` (silencioso no arquivo).
       mcp_config: {
         command: "node",
         args: [`\${__dirname}/server/${s.entry}`],
+        env: {
+          GOVBR_LOG_LEVEL: "${user_config.log_level}",
+          GOVBR_LOG_FORMAT: "${user_config.log_format}",
+          GOVBR_LOG_DIR: "${user_config.log_dir}",
+        },
+      },
+    },
+    // Configuração exposta na UI do app ao instalar/ajustar o plugin. Todos os
+    // campos têm default, então o `env` acima sempre recebe um valor concreto.
+    user_config: {
+      log_level: {
+        type: "string",
+        title: "Nível de log",
+        description: "silent | error | info | debug. Use 'debug' para registrar também as consultas e os parâmetros.",
+        default: "error",
+        required: false,
+      },
+      log_format: {
+        type: "string",
+        title: "Formato do log",
+        description: "json (uma linha estruturada por evento) ou text (legível).",
+        default: "json",
+        required: false,
+      },
+      log_dir: {
+        type: "directory",
+        title: "Pasta dos logs",
+        description: "Onde gravar os arquivos .log. Padrão: ~/.govbr-claude-plugin/logs.",
+        default: "${HOME}/.govbr-claude-plugin/logs",
+        required: false,
       },
     },
     compatibility: {
