@@ -13,20 +13,6 @@ import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
-// Nível de log embutido no manifest (passado via env ao processo). Fixo em build
-// time porque o `.mcpb` aqui é embutido num `.plugin` — esse contexto (Code/Cowork)
-// não tem o fluxo de UI de `user_config` do host MCPB standalone, então interpolar
-// `${user_config.X}` faz o host descartar o servidor (some da lista). Um `env`
-// literal é suporte padrão e confiável.
-//
-// Padrão `info` (boot + consultas, sem params): seguro para distribuir, pois
-// `debug` gravaria os params de toda consulta em disco. O override é via uma var
-// DEDICADA de build (GOVBR_BUILD_LOG_LEVEL), NÃO a GOVBR_LOG_LEVEL de runtime —
-// assim o nível de log da própria máquina de build não vaza para o pacote.
-// Ex.: `GOVBR_BUILD_LOG_LEVEL=debug npm run package`.
-const LOG_LEVEL = (process.env.GOVBR_BUILD_LOG_LEVEL || "info").trim();
-const LOG_FORMAT = (process.env.GOVBR_BUILD_LOG_FORMAT || "json").trim();
-
 // Metadados de cada bundle. O `bundle` é o .cjs gerado por build.mjs.
 const servers = [
   {
@@ -82,18 +68,11 @@ for (const s of servers) {
       entry_point: `server/${s.entry}`,
       // O host lança este comando como servidor stdio. ${__dirname} é o diretório
       // do bundle desempacotado — não usar caminho absoluto da máquina de build.
-      //
-      // O `env` passa a configuração de log EXPLICITAMENTE ao processo. Sem isso,
-      // o servidor só veria GOVBR_LOG_* se o app GUI herdasse o ambiente do shell
-      // — o que nem sempre acontece, deixando o log silencioso. Valores literais
-      // (sem interpolação de user_config): ver nota em LOG_LEVEL acima.
+      // Sem `env`: o nível de log vem da env GOVBR_LOG_LEVEL (se definida no
+      // sistema) ou do padrão embutido `info` (ver src/core/logger.ts).
       mcp_config: {
         command: "node",
         args: [`\${__dirname}/server/${s.entry}`],
-        env: {
-          GOVBR_LOG_LEVEL: LOG_LEVEL,
-          GOVBR_LOG_FORMAT: LOG_FORMAT,
-        },
       },
     },
     compatibility: {

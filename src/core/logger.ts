@@ -5,21 +5,12 @@
 // Nada aqui pode lançar exceção: logging é best-effort e jamais deve derrubar o
 // servidor. Toda E/S fica protegida por try/catch silencioso.
 //
-// Configuração em duas camadas, com esta precedência (maior primeiro):
-//   1. Arquivo de runtime  ~/.govbr-claude-plugin/config.json
-//   2. Variáveis de ambiente (no bundle MCPB vêm do `mcp_config.env`; em dev/stdio,
-//      do sistema ou do .mcp.json)
-//   3. Padrão embutido
-//
-// O arquivo existe para mudar o nível SEM reempacotar/reimportar o plugin: basta
-// editá-lo e reiniciar o servidor (o host relança o processo). Campos aceitos:
-//   { "logLevel": "silent|error|info|debug", "logFormat": "json|text", "logDir": "..." }
-//
-// Variáveis de ambiente equivalentes (padrões entre parênteses):
-//   GOVBR_LOG_LEVEL   silent | error | info | debug   (padrão: error)
+// Configuração por variáveis de ambiente. Se a env não existir, vale o padrão
+// embutido; se existir, vale o valor da env:
+//   GOVBR_LOG_LEVEL   silent | error | info | debug   (padrão: info)
 //   GOVBR_LOG_DIR     pasta dos arquivos de log        (padrão: dir de dados do usuário)
 //   GOVBR_LOG_FORMAT  json | text                      (padrão: json)
-import { appendFileSync, mkdirSync, readFileSync, renameSync, statSync } from "node:fs";
+import { appendFileSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -33,32 +24,10 @@ const MAX_LOG_BYTES = 5 * 1024 * 1024;
 /** Tamanho máximo de um valor de string nos params logados (evita despejos enormes). */
 const MAX_VALUE_LEN = 120;
 
+/** Nível a partir da env; ausente ou inválido → `info` (padrão embutido). */
 function parseLevel(raw: string | undefined): LogLevel {
   const v = (raw ?? "").trim().toLowerCase();
-  return v in LEVEL_RANK ? (v as LogLevel) : "error";
-}
-
-/** Config opcional de runtime; campos ausentes caem para env/padrão. */
-interface FileConfig {
-  logLevel?: string;
-  logFormat?: string;
-  logDir?: string;
-}
-
-/**
- * Lê `~/.govbr-claude-plugin/config.json` para permitir trocar nível/formato/pasta
- * sem reempacotar o plugin. Caminho fixo em `homedir()` (independe de `logDir`).
- * Best-effort: arquivo ausente ou JSON inválido → `{}`, nunca lança.
- */
-function readFileConfig(): FileConfig {
-  try {
-    const path = join(homedir(), ".govbr-claude-plugin", "config.json");
-    const parsed = JSON.parse(readFileSync(path, "utf8"));
-    if (parsed && typeof parsed === "object") return parsed as FileConfig;
-  } catch {
-    // Sem arquivo ou conteúdo inválido: segue com env/padrão.
-  }
-  return {};
+  return v in LEVEL_RANK ? (v as LogLevel) : "info";
 }
 
 /**
@@ -125,16 +94,13 @@ export interface Logger {
  * logger segue só com `stderr`, sem nunca falhar.
  */
 export function createLogger(serverName: string): Logger {
-  // Precedência: arquivo de runtime > variável de ambiente > padrão.
-  const cfg = readFileConfig();
-  const level = parseLevel(cfg.logLevel ?? process.env.GOVBR_LOG_LEVEL);
-  const format =
-    (cfg.logFormat ?? process.env.GOVBR_LOG_FORMAT ?? "json").trim().toLowerCase() === "text" ? "text" : "json";
+  const level = parseLevel(process.env.GOVBR_LOG_LEVEL);
+  const format = (process.env.GOVBR_LOG_FORMAT ?? "json").trim().toLowerCase() === "text" ? "text" : "json";
   const threshold = LEVEL_RANK[level];
 
   let file: string | null = null;
   if (level !== "silent") {
-    const dir = (cfg.logDir || process.env.GOVBR_LOG_DIR || "").trim() || defaultLogDir();
+    const dir = (process.env.GOVBR_LOG_DIR || "").trim() || defaultLogDir();
     try {
       mkdirSync(dir, { recursive: true });
       file = join(dir, `${serverName}.log`);
