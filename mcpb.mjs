@@ -17,10 +17,15 @@ const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), 
 // time porque o `.mcpb` aqui é embutido num `.plugin` — esse contexto (Code/Cowork)
 // não tem o fluxo de UI de `user_config` do host MCPB standalone, então interpolar
 // `${user_config.X}` faz o host descartar o servidor (some da lista). Um `env`
-// literal é suporte padrão e confiável. Para gerar com params, rode com
-// GOVBR_LOG_LEVEL=debug (ex.: `GOVBR_LOG_LEVEL=debug npm run package`).
-const LOG_LEVEL = (process.env.GOVBR_LOG_LEVEL || "info").trim();
-const LOG_FORMAT = (process.env.GOVBR_LOG_FORMAT || "json").trim();
+// literal é suporte padrão e confiável.
+//
+// Padrão `info` (boot + consultas, sem params): seguro para distribuir, pois
+// `debug` gravaria os params de toda consulta em disco. O override é via uma var
+// DEDICADA de build (GOVBR_BUILD_LOG_LEVEL), NÃO a GOVBR_LOG_LEVEL de runtime —
+// assim o nível de log da própria máquina de build não vaza para o pacote.
+// Ex.: `GOVBR_BUILD_LOG_LEVEL=debug npm run package`.
+const LOG_LEVEL = (process.env.GOVBR_BUILD_LOG_LEVEL || "info").trim();
+const LOG_FORMAT = (process.env.GOVBR_BUILD_LOG_FORMAT || "json").trim();
 
 // Metadados de cada bundle. O `bundle` é o .cjs gerado por build.mjs.
 const servers = [
