@@ -13,6 +13,15 @@ import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
+// Nível de log embutido no manifest (passado via env ao processo). Fixo em build
+// time porque o `.mcpb` aqui é embutido num `.plugin` — esse contexto (Code/Cowork)
+// não tem o fluxo de UI de `user_config` do host MCPB standalone, então interpolar
+// `${user_config.X}` faz o host descartar o servidor (some da lista). Um `env`
+// literal é suporte padrão e confiável. Para gerar com params, rode com
+// GOVBR_LOG_LEVEL=debug (ex.: `GOVBR_LOG_LEVEL=debug npm run package`).
+const LOG_LEVEL = (process.env.GOVBR_LOG_LEVEL || "info").trim();
+const LOG_FORMAT = (process.env.GOVBR_LOG_FORMAT || "json").trim();
+
 // Metadados de cada bundle. O `bundle` é o .cjs gerado por build.mjs.
 const servers = [
   {
@@ -69,43 +78,17 @@ for (const s of servers) {
       // O host lança este comando como servidor stdio. ${__dirname} é o diretório
       // do bundle desempacotado — não usar caminho absoluto da máquina de build.
       //
-      // O `env` passa a configuração de log EXPLICITAMENTE ao processo bundlado,
-      // interpolando os valores de `user_config` (abaixo). Sem isso, o servidor só
-      // veria GOVBR_LOG_* se o app GUI herdasse o ambiente do shell — o que nem
-      // sempre acontece, deixando o log no padrão `error` (silencioso no arquivo).
+      // O `env` passa a configuração de log EXPLICITAMENTE ao processo. Sem isso,
+      // o servidor só veria GOVBR_LOG_* se o app GUI herdasse o ambiente do shell
+      // — o que nem sempre acontece, deixando o log silencioso. Valores literais
+      // (sem interpolação de user_config): ver nota em LOG_LEVEL acima.
       mcp_config: {
         command: "node",
         args: [`\${__dirname}/server/${s.entry}`],
         env: {
-          GOVBR_LOG_LEVEL: "${user_config.log_level}",
-          GOVBR_LOG_FORMAT: "${user_config.log_format}",
-          GOVBR_LOG_DIR: "${user_config.log_dir}",
+          GOVBR_LOG_LEVEL: LOG_LEVEL,
+          GOVBR_LOG_FORMAT: LOG_FORMAT,
         },
-      },
-    },
-    // Configuração exposta na UI do app ao instalar/ajustar o plugin. Todos os
-    // campos têm default, então o `env` acima sempre recebe um valor concreto.
-    user_config: {
-      log_level: {
-        type: "string",
-        title: "Nível de log",
-        description: "silent | error | info | debug. Use 'debug' para registrar também as consultas e os parâmetros.",
-        default: "error",
-        required: false,
-      },
-      log_format: {
-        type: "string",
-        title: "Formato do log",
-        description: "json (uma linha estruturada por evento) ou text (legível).",
-        default: "json",
-        required: false,
-      },
-      log_dir: {
-        type: "directory",
-        title: "Pasta dos logs",
-        description: "Onde gravar os arquivos .log. Padrão: ~/.govbr-claude-plugin/logs.",
-        default: "${HOME}/.govbr-claude-plugin/logs",
-        required: false,
       },
     },
     compatibility: {
