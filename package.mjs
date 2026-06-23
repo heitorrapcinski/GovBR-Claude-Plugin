@@ -2,10 +2,9 @@
 // local" — funciona nos três Personalizar (Code, Cowork e Chat).
 //
 // O importador do app REJEITA servidores stdio crus ("Plugins may only declare
-// remote or MCPB servers"). Por isso o pacote NÃO leva o .mcp.json stdio; em vez
-// disso embute os bundles .mcpb (gerados por mcpb.mjs) e os referencia pelo campo
-// `mcpServers` do plugin.json. O .mcp.json do repo serve só ao desenvolvimento
-// local (ver README) e não entra aqui.
+// remote or MCPB servers"). Por isso o plugin não declara stdio; ele embute os
+// bundles .mcpb (gerados por mcpb.mjs) e os referencia pelo campo `mcpServers`
+// do plugin.json.
 //
 // Saída: build/govbr-claude-plugin.plugin  (a pasta build/ está no .gitignore).
 import AdmZip from "adm-zip";
@@ -19,8 +18,8 @@ if (faltando.length > 0) {
   process.exit(1);
 }
 
-// plugin.json distribuído: o versionado não tem `mcpServers` (no dev cai no
-// .mcp.json stdio); aqui injetamos o array apontando para os .mcpb embutidos.
+// plugin.json distribuído: o versionado não declara `mcpServers`; aqui
+// injetamos o array apontando para os .mcpb embutidos na raiz do plugin.
 const manifest = JSON.parse(readFileSync(".claude-plugin/plugin.json", "utf8"));
 manifest.mcpServers = mcpbs.map((b) => `./${b.split("/").pop()}`);
 

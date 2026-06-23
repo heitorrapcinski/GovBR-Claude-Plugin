@@ -50,7 +50,7 @@ npm run package    # gera build/govbr-claude-plugin.plugin
 
 O `npm run package` compila cada servidor num bundle autossuficiente (`build/pncp.cjs` e `build/compras.cjs`, com todas as dependências embutidas), empacota cada um como **MCPB** (`build/govbr-*.mcpb`) e monta o **`build/govbr-claude-plugin.plugin`** — pronto para upload, sem `node_modules`.
 
-> **Por que MCPB?** O importador de "Fazer upload de plugin local" rejeita servidores **stdio crus** (*"MCP server is a local/stdio server. Plugins may only declare remote or MCPB servers"*). O pacote por isso **não** leva o `.mcp.json` stdio; em vez disso, o `plugin.json` referencia os `.mcpb` pelo campo `mcpServers`. Esse formato é aceito nos três Personalizar — **Code, Cowork e Chat**. São dois `.mcpb` porque cada API tem `baseUrl` e cliente HTTP próprios.
+> **Por que MCPB?** O importador de "Fazer upload de plugin local" rejeita servidores **stdio crus** (*"MCP server is a local/stdio server. Plugins may only declare remote or MCPB servers"*). Por isso o `plugin.json` não declara stdio; ele referencia os `.mcpb` pelo campo `mcpServers`. Esse formato é aceito nos três Personalizar — **Code, Cowork e Chat**. São dois `.mcpb` porque cada API tem `baseUrl` e cliente HTTP próprios.
 
 ### Instale o plugin
 
@@ -88,18 +88,16 @@ Os parâmetros das chamadas só são gravados no nível `debug`, e ainda assim *
 | `GOVBR_LOG_FORMAT` | `json` · `text` | `json` | Formato das linhas. `json` é ideal para parsear/agregar. |
 | `GOVBR_LOG_DIR` | caminho absoluto | vazio = padrão | Pasta dos arquivos. Vazio usa o diretório de dados do usuário (ver abaixo). |
 
-Os padrões já dão observabilidade útil (só falhas, em `~/.govbr-claude-plugin/logs`), então **nada precisa ser configurado**. Para ajustar, defina as variáveis acima de uma destas formas:
+Os padrões já dão observabilidade útil (só falhas, em `~/.govbr-claude-plugin/logs`), então **nada precisa ser configurado**. Para ajustar:
 
-- **Variável de ambiente do sistema** (vale para qualquer instalação): defina `GOVBR_LOG_LEVEL=info` no ambiente antes de iniciar o app do Claude.
-- **No `.mcp.json` da instalação local** (Claude Code): após instalar, adicione um bloco `env` ao servidor no `.mcp.json` instalado, ex.: `"env": { "GOVBR_LOG_LEVEL": "info" }`.
-
-> ⚠️ **Não inclua `env` no `.mcp.json` empacotado no `.plugin`.** O importador do app do Claude rejeita servidores stdio que declaram `env` (*"MCP server is a local/stdio server"*). O bloco `env` é honrado **em runtime** pelo Claude Code, mas barra a **importação** do `.plugin`. Por isso o `.mcp.json` distribuído não traz `env` — configure por uma das formas acima.
+- **Variável de ambiente do sistema** (recomendado): defina `GOVBR_LOG_LEVEL=info` no ambiente antes de iniciar o app do Claude — o servidor MCPB herda o ambiente do processo do app.
+- **Default embutido no manifest**: adicione um bloco `env` em `server.mcp_config.env` no `mcpb.mjs` (ex.: `"GOVBR_LOG_LEVEL": "info"`) e rode `npm run package`.
 
 ### Onde os arquivos são gravados
 
 Um arquivo por servidor (`govbr-pncp.log`, `govbr-compras.log`), com rotação simples (ao passar de 5 MB, vira `.log.1`). Por padrão em **`~/.govbr-claude-plugin/logs/`** — o mesmo caminho em qualquer SO, onde `~` é a home do usuário resolvida via `os.homedir()` (`C:\Users\…` no Windows, `/home/…` no Linux, `/Users/…` no macOS). Fica **fora do diretório de instalação do plugin**, que é sobrescrito a cada update.
 
-> O `.mcp.json` mantém `GOVBR_LOG_DIR` **vazio** de propósito: o `~` é uma convenção de shell que o Node/`.mcp.json` não expandem, então o padrão é resolvido em código. Defina `GOVBR_LOG_DIR` com um **caminho absoluto** para centralizar os logs em outro lugar.
+> O default de `GOVBR_LOG_DIR` é resolvido **em código**, não no manifest: `~` é convenção de shell que o Node não expande, então o padrão usa `os.homedir()`. Defina `GOVBR_LOG_DIR` com um **caminho absoluto** para centralizar os logs em outro lugar.
 
 Se a pasta não puder ser criada, o servidor segue só com `stderr` — logging nunca derruba o servidor.
 
@@ -117,14 +115,13 @@ npm run package     # gera build/govbr-claude-plugin.plugin (mcpb embutido)
 npm run typecheck   # checagem de tipos (tsc --noEmit)
 ```
 
-> O **`.mcp.json` (stdio) na raiz é só para desenvolvimento local** — quando o Claude Code carrega o próprio repositório como plugin, ele usa esse registro (sem precisar gerar `.mcpb`). O `plugin.json` versionado **não** tem `mcpServers`, então no dev cai no `.mcp.json`; o `package.mjs` injeta o `mcpServers`→`.mcpb` só na cópia distribuída.
+> Para iterar durante o desenvolvimento sem reinstalar o `.plugin`, rode o servidor direto do código com `npm run dev:pncp` / `npm run dev:compras` (tsx) e inspecione com o [MCP Inspector](https://github.com/modelcontextprotocol/inspector). O `plugin.json` versionado **não** declara `mcpServers`; o `package.mjs` injeta o `mcpServers`→`.mcpb` só na cópia distribuída.
 
 Estrutura do plugin:
 
 ```
 GovBR-Claude-Plugin/
 ├── .claude-plugin/plugin.json   # manifesto do plugin
-├── .mcp.json                    # registra os servidores MCP — só dev local
 ├── skills/
 │   ├── pncp/SKILL.md            # skill /pncp
 │   └── compras/SKILL.md         # skill /compras
@@ -156,7 +153,7 @@ A arquitetura é **declarativa**: o núcleo (`src/core`) transforma uma `ApiDefi
 
 1. Crie `src/apis/<nova-api>/definition.ts` exportando uma `ApiDefinition` (base URL, timeout e a lista de ferramentas, cada uma com `path`, `params` e `required` — ou um `handler` local).
 2. Crie `src/apis/<nova-api>/index.ts` chamando `startApiServer(<novaApi>Definition)`.
-3. Registre a entrada em `build.mjs`, o servidor no `.mcp.json` (dev) e o bundle em `mcpb.mjs` (de onde o `package.mjs` puxa os `.mcpb`).
+3. Registre a entrada em `build.mjs` e o bundle em `mcpb.mjs` (de onde o `package.mjs` puxa os `.mcpb`).
 4. (Opcional) Crie `skills/<nova-api>/SKILL.md` para a interface em linguagem natural.
 
 ---

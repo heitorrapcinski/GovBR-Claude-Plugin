@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
-// Cada entrada vira um bundle .cjs registrado no .mcp.json.
+// Cada entrada vira um bundle .cjs empacotado num .mcpb por mcpb.mjs.
 const entries = [
   { in: "src/apis/pncp/index.ts", out: "build/pncp.cjs" },
   { in: "src/apis/compras/index.ts", out: "build/compras.cjs" },
