@@ -5,7 +5,8 @@ import {
   ListToolsRequestSchema,
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { createApiHttpClient } from "./http.js";
+import { ApiCallError, createApiHttpClient } from "./http.js";
+import { createLogger } from "./logger.js";
 import type { ApiDefinition, ToolDef } from "./types.js";
 import { resolveVersion } from "./version.js";
 
@@ -67,6 +68,7 @@ function buildInputSchema(tool: ToolDef): Tool["inputSchema"] {
  */
 export async function startApiServer(def: ApiDefinition): Promise<void> {
   const version = resolveVersion();
+  const log = createLogger(def.serverName);
   const http = createApiHttpClient(def, version);
 
   const server = new Server(
@@ -88,6 +90,7 @@ export async function startApiServer(def: ApiDefinition): Promise<void> {
     const { name, arguments: args } = request.params;
     const safeArgs = (args ?? {}) as Record<string, unknown>;
     const tool = toolsByName.get(name);
+    const startedAt = Date.now();
 
     try {
       if (!tool) throw new Error(`Ferramenta desconhecida: ${name}`);
@@ -100,11 +103,21 @@ export async function startApiServer(def: ApiDefinition): Promise<void> {
         result = await http.get(path, query);
       }
 
+      log.call({ tool: name, ok: true, durationMs: Date.now() - startedAt, params: safeArgs });
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      log.call({
+        tool: name,
+        ok: false,
+        durationMs: Date.now() - startedAt,
+        status: error instanceof ApiCallError ? error.status : undefined,
+        errKind: error instanceof ApiCallError ? error.kind : "internal",
+        error: errorMessage,
+        params: safeArgs,
+      });
       return {
         content: [
           { type: "text" as const, text: `Erro ao consultar a API do ${def.apiLabel}: ${errorMessage}` },
@@ -116,5 +129,5 @@ export async function startApiServer(def: ApiDefinition): Promise<void> {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  process.stderr.write(`MCP ${def.serverName} iniciado com sucesso\n`);
+  log.boot(`MCP ${def.serverName} iniciado com sucesso (versão ${version}, log=${log.level}, arquivo=${log.file ?? "—"})`);
 }

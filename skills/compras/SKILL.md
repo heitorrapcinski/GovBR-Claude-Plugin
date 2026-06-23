@@ -29,6 +29,7 @@ Interprete o pedido e execute a consulta adequada. Siga estas etapas:
 | **Contratações da Lei 14.133/2021** (via Compras.gov.br) | `compras_contratacoes`, `compras_contratacoes_itens`, `compras_contratacoes_itens_resultado` |
 | **Atas de registro de preço** e seus itens/adesões | `compras_arp`, `compras_arp_itens`, `compras_arp_unidades_item`, `compras_arp_empenhos_item`, `compras_arp_adesoes_item` |
 | **Contratos** e seus itens | `compras_contratos`, `compras_contratos_itens` |
+| **Análise de resultado** (quem venceu, sob qual critério, por qual valor; "por que perdemos") | fluxo `compras_contratacoes_itens_resultado` + critério de julgamento — ver **5.6** |
 | **Fornecedores** (por CNPJ/CPF, porte, CNAE) | `compras_fornecedor` |
 | Releases no padrão **OCDS** | `compras_ocds_releases` |
 | Códigos de **modalidade**, modo de disputa, critério de julgamento | `compras_tabelas_dominio` |
@@ -108,6 +109,27 @@ Como conduzir:
 4. **Ao receber os arquivos, continue a análise você mesmo**: descompacte o ZIP, leia os PDFs (`relatorio-termo-homologacao-*` e `relatorio-julg-hab-*`) e **estruture por item**: fornecedor, **marca**, **modelo**, valor unitário/total da proposta e situação (homologado/desclassificado). Cruze com os valores homologados de `pncp_consultar_resultado_item` / `compras_contratacoes_itens_resultado` e com a especificação exigida no edital.
 
 Explique o porquê em uma linha: são dados **públicos** (transparência), mas o portal os entrega por download protegido, fora da API aberta — por isso o passo manual de baixar e trazer os arquivos.
+
+### 5.6 Análise de Resultado (quem venceu, sob qual critério e por quê)
+
+Quando o pedido envolver **entender o resultado de uma contratação** — "quem venceu e por quanto", "por que perdemos", "como tal fornecedor tem ganhado", comparar fornecedores — parta de um princípio do domínio: em contratação pública a decisão **não é subjetiva**. O critério de julgamento é definido por lei e pelo edital, e o resultado é dado público e documentado. Não há "percepção do decisor" a investigar (como numa venda privada); a pergunta certa é **"sob qual critério, e com qual proposta, o fornecedor venceu"**, reconstruída a partir dos dados.
+
+**Ponto de partida: o critério de julgamento.** Consulte a tabela de domínio com `compras_tabelas_dominio` (`criterio_julgamento`). Ele determina **de onde vem a razão da derrota** e ramifica a análise:
+
+| Critério (código) | A derrota é explicada por… | Fonte do dado |
+|---|---|---|
+| Menor preço (1), Maior desconto (2), Maior lance (5) | **Preço.** Quantifique o *gap* entre o valor vencedor e a sua proposta. | `compras_contratacoes_itens_resultado` (valor homologado + classificação). **100% via API.** |
+| Técnica e preço (4), Melhor técnica (8), Melhor técnica ou conteúdo artístico (3), Conteúdo artístico (9) | **Pontuação técnica** segundo a fórmula do edital. | Edital define os critérios; a **nota atribuída** está na ata/termo de julgamento, que **não vem por API** → use o *handoff* da seção **5.5**. |
+| Não se aplica (7) | **Não houve disputa** (dispensa/inexigibilidade). O enquadramento "concorrente" não cabe. | Foque na **justificativa** da contratação direta e em quem foi contratado, não em "derrota". |
+
+**Tipo de contratante muda a lei e onde achar o julgamento.** Antes de interpretar, identifique o regime do órgão:
+- **Lei 14.133/2021** (administração direta, autárquica, fundacional — Ministérios, agências): critérios de julgamento no art. 33. É o caso da maioria dos órgãos no Compras.gov.br/SIASG.
+- **Lei 13.303/2016** (estatais — ex.: Serpro, Dataprev, BB, Caixa, Correios, BNDES, Petrobras): regime próprio de licitação, critérios no art. 54. Os documentos de julgamento **frequentemente vivem no portal da própria estatal**, nem sempre no ComprasNet — avise o usuário e não prometa o *handoff* padrão da 5.5 sem verificar.
+- **Legado** (Lei 8.666/93, pregão Lei 10.520/02 — endpoints `compras_legado_*`): em contratos antigos o critério pode vir vazio ou "não se aplica" — **não assuma** o campo.
+
+**Como estruturar a análise:** monte um panorama do resultado — critério → fornecedor vencedor → valor homologado → **posição na classificação e *gap* %** → e, quando técnica e preço, a decomposição da pontuação (via PDF do *handoff* da 5.5). Tudo derivado de fato documentado. Esse mesmo panorama, repetido por contratação ao longo do tempo, é a base para comparar fornecedores (curva de preços, órgãos onde cada um ganha, faixa de pontuação técnica) — sempre sobre dado objetivo, não percepção.
+
+**Honestidade sobre o limite:** para critérios de **preço**, a análise é integralmente automatizável via API. Para **técnica e preço**, o detalhe do julgamento fica atrás do passo manual da seção 5.5 — deixe isso claro ao usuário em vez de inferir a nota técnica.
 
 ### 6. Ofereça próximos passos
 

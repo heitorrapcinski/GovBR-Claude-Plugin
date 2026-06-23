@@ -48,20 +48,58 @@ npm install        # instala deps e compila os bundles (script "prepare")
 npm run package    # gera build/govbr-claude-plugin.plugin
 ```
 
-O `npm run package` compila cada servidor num bundle autossuficiente (`build/pncp.cjs` e `build/compras.cjs`, com todas as dependências embutidas) e empacota o plugin em **`build/govbr-claude-plugin.plugin`** — pronto para upload, sem `node_modules`.
+O `npm run package` compila cada servidor num bundle autossuficiente (`build/pncp.cjs` e `build/compras.cjs`, com todas as dependências embutidas), empacota cada um como **MCPB** (`build/govbr-*.mcpb`) e monta o **`build/govbr-claude-plugin.plugin`** — pronto para upload, sem `node_modules`.
+
+> **Por que MCPB?** O importador de "Fazer upload de plugin local" rejeita servidores **stdio crus** (*"MCP server is a local/stdio server. Plugins may only declare remote or MCPB servers"*). Por isso o `plugin.json` não declara stdio; ele referencia os `.mcpb` pelo campo `mcpServers`. Esse formato é aceito nos três Personalizar — **Code, Cowork e Chat**. São dois `.mcpb` porque cada API tem `baseUrl` e cliente HTTP próprios.
 
 ### Instale o plugin
 
-No app do Claude, abra a área de plugins (**Customize → plugins**) e escolha **"Fazer upload de plugin local"**. Selecione o arquivo **`build/govbr-claude-plugin.plugin`**.
+No app do Claude, abra **Personalizar → "Fazer upload de plugin local"** e selecione **`build/govbr-claude-plugin.plugin`**. O Claude lê o `.claude-plugin/plugin.json` e registra:
 
-O Claude lê o manifesto `.claude-plugin/plugin.json` e registra automaticamente:
-
-- os **servidores MCP** (via `.mcp.json` → `pncp` e `compras`);
+- os **servidores MCP** (via `mcpServers` → os dois `.mcpb`, `pncp` e `compras`);
 - os **skills `/pncp` e `/compras`** (via `skills/*/SKILL.md`), que o Claude também invoca automaticamente conforme o pedido.
+
+> ℹ️ O MCPB embute o runtime para rodar sem `node` instalado, mas continua sendo um servidor **local** — funciona em hosts com máquina local (Code/Cowork desktop); **não** roda em sessão 100% na nuvem.
 
 ### Confirme
 
 Os comandos `/pncp` e `/compras` ficam disponíveis na barra de comandos, e o Claude passa a reconhecer pedidos de dados de compras públicas automaticamente na conversa.
+
+---
+
+## Observabilidade (logs)
+
+Cada servidor MCP registra suas chamadas de ferramenta para diagnóstico (latência, taxa de erro, timeouts do portal). Como o servidor se comunica por **stdio** — onde o `stdout` é reservado ao protocolo JSON‑RPC —, os logs vão para o **`stderr`** (capturado pelo Claude Code; visível com `claude --debug` ou no painel `/mcp`) e, opcionalmente, para um **arquivo**.
+
+Cada evento é uma linha estruturada. Exemplo (JSON):
+
+```json
+{"ts":"2026-06-22T14:03:11.482Z","server":"govbr-pncp","level":"info","event":"call","tool":"pncp_consultar_contratacoes_publicacao","ok":true,"durationMs":842,"status":200}
+{"ts":"2026-06-22T14:05:02.107Z","server":"govbr-pncp","level":"error","event":"call","tool":"pncp_consultar_atas","ok":false,"durationMs":90000,"errKind":"timeout"}
+```
+
+Os parâmetros das chamadas só são gravados no nível `debug`, e ainda assim **sanitizados**: strings longas são truncadas e sequências que parecem CPF (11 dígitos) ou CNPJ (14 dígitos) têm o miolo mascarado.
+
+### Configuração (variáveis de ambiente)
+
+| Variável | Valores | Padrão | Efeito |
+|---|---|---|---|
+| `GOVBR_LOG_LEVEL` | `silent` · `error` · `info` · `debug` | `error` | `error`: só falhas. `info`: + chamadas bem‑sucedidas e boot. `debug`: + params sanitizados. `silent`: desliga o arquivo (boot ainda sinaliza no stderr). |
+| `GOVBR_LOG_FORMAT` | `json` · `text` | `json` | Formato das linhas. `json` é ideal para parsear/agregar. |
+| `GOVBR_LOG_DIR` | caminho absoluto | vazio = padrão | Pasta dos arquivos. Vazio usa o diretório de dados do usuário (ver abaixo). |
+
+Os padrões já dão observabilidade útil (só falhas, em `~/.govbr-claude-plugin/logs`), então **nada precisa ser configurado**. Para ajustar:
+
+- **Variável de ambiente do sistema** (recomendado): defina `GOVBR_LOG_LEVEL=info` no ambiente antes de iniciar o app do Claude — o servidor MCPB herda o ambiente do processo do app.
+- **Default embutido no manifest**: adicione um bloco `env` em `server.mcp_config.env` no `mcpb.mjs` (ex.: `"GOVBR_LOG_LEVEL": "info"`) e rode `npm run package`.
+
+### Onde os arquivos são gravados
+
+Um arquivo por servidor (`govbr-pncp.log`, `govbr-compras.log`), com rotação simples (ao passar de 5 MB, vira `.log.1`). Por padrão em **`~/.govbr-claude-plugin/logs/`** — o mesmo caminho em qualquer SO, onde `~` é a home do usuário resolvida via `os.homedir()` (`C:\Users\…` no Windows, `/home/…` no Linux, `/Users/…` no macOS). Fica **fora do diretório de instalação do plugin**, que é sobrescrito a cada update.
+
+> O default de `GOVBR_LOG_DIR` é resolvido **em código**, não no manifest: `~` é convenção de shell que o Node não expande, então o padrão usa `os.homedir()`. Defina `GOVBR_LOG_DIR` com um **caminho absoluto** para centralizar os logs em outro lugar.
+
+Se a pasta não puder ser criada, o servidor segue só com `stderr` — logging nunca derruba o servidor.
 
 ---
 
@@ -72,16 +110,18 @@ npm install         # instala deps e gera os bundles
 npm run dev:pncp    # roda o servidor PNCP direto do TypeScript (tsx)
 npm run dev:compras # roda o servidor Compras direto do TypeScript (tsx)
 npm run build       # regenera os dois bundles com esbuild
-npm run package     # gera o pacote build/govbr-claude-plugin.plugin
+npm run mcpb        # gera os bundles MCPB (build/govbr-*.mcpb)
+npm run package     # gera build/govbr-claude-plugin.plugin (mcpb embutido)
 npm run typecheck   # checagem de tipos (tsc --noEmit)
 ```
+
+> Para iterar durante o desenvolvimento sem reinstalar o `.plugin`, rode o servidor direto do código com `npm run dev:pncp` / `npm run dev:compras` (tsx) e inspecione com o [MCP Inspector](https://github.com/modelcontextprotocol/inspector). O `plugin.json` versionado **não** declara `mcpServers`; o `package.mjs` injeta o `mcpServers`→`.mcpb` só na cópia distribuída.
 
 Estrutura do plugin:
 
 ```
 GovBR-Claude-Plugin/
 ├── .claude-plugin/plugin.json   # manifesto do plugin
-├── .mcp.json                    # registra os servidores MCP (pncp + compras)
 ├── skills/
 │   ├── pncp/SKILL.md            # skill /pncp
 │   └── compras/SKILL.md         # skill /compras
@@ -89,16 +129,19 @@ GovBR-Claude-Plugin/
 │   ├── core/                    # framework genérico (compartilhado)
 │   │   ├── types.ts             #   ApiDefinition, ToolDef, ParamDef
 │   │   ├── http.ts              #   cliente HTTP + tratamento de erros
+│   │   ├── logger.ts            #   observabilidade (stderr + arquivo, configurável)
 │   │   ├── server.ts            #   gera o servidor MCP a partir de uma definição
 │   │   └── version.ts
 │   └── apis/                    # uma pasta por API do governo
 │       ├── pncp/                #   definition.ts + domain.ts + index.ts
 │       └── compras/             #   definition.ts + index.ts
 ├── build.mjs                    # esbuild (um bundle por API)
-├── package.mjs                  # empacotamento (.plugin)
+├── mcpb.mjs                     # empacotamento (.mcpb, um por API)
+├── package.mjs                  # empacotamento (.plugin, mcpb embutido)
 └── build/                       # gerado, gitignored
     ├── pncp.cjs                 #   bundle PNCP
     ├── compras.cjs              #   bundle Compras
+    ├── govbr-pncp.mcpb / govbr-compras.mcpb
     └── govbr-claude-plugin.plugin
 ```
 
@@ -110,7 +153,7 @@ A arquitetura é **declarativa**: o núcleo (`src/core`) transforma uma `ApiDefi
 
 1. Crie `src/apis/<nova-api>/definition.ts` exportando uma `ApiDefinition` (base URL, timeout e a lista de ferramentas, cada uma com `path`, `params` e `required` — ou um `handler` local).
 2. Crie `src/apis/<nova-api>/index.ts` chamando `startApiServer(<novaApi>Definition)`.
-3. Registre a entrada em `build.mjs`, o servidor em `.mcp.json` e o bundle em `package.mjs`.
+3. Registre a entrada em `build.mjs` e o bundle em `mcpb.mjs` (de onde o `package.mjs` puxa os `.mcpb`).
 4. (Opcional) Crie `skills/<nova-api>/SKILL.md` para a interface em linguagem natural.
 
 ---

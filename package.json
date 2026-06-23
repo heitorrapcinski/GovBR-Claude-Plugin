@@ -1,6 +1,6 @@
 {
   "name": "govbr-claude-plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Plugin MCP para Claude interagir com APIs do governo brasileiro (PNCP e Compras.gov.br)",
   "type": "module",
   "files": [
@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "node build.mjs",
-    "package": "npm run build && node package.mjs",
+    "mcpb": "npm run build && node mcpb.mjs",
+    "package": "npm run mcpb && node package.mjs",
     "typecheck": "tsc --noEmit",
     "start:pncp": "node build/pncp.cjs",
     "start:compras": "node build/compras.cjs",
